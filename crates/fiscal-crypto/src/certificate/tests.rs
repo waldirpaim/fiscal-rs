@@ -40,6 +40,48 @@ fn tls_chain_keeps_leaf_contract_and_orders_intermediates() {
     assert_eq!(data.certificate.matches("BEGIN CERTIFICATE").count(), 1);
 }
 
+#[test]
+fn tls_chain_preserves_self_issued_intermediate_in_both_bag_orders() {
+    let leaf = include_str!("../../../../tests/fixtures/tls/self-issued-client.pem");
+    let intermediate = include_str!("../../../../tests/fixtures/tls/self-issued-intermediate.pem");
+    for pfx in [
+        include_bytes!("../../../../tests/fixtures/tls/self-issued-root-first.pfx").as_slice(),
+        include_bytes!("../../../../tests/fixtures/tls/self-issued-intermediate-first.pfx")
+            .as_slice(),
+    ] {
+        let (data, chain) = load_certificate_with_chain(pfx, "test-only").unwrap();
+        assert_eq!(data.certificate, leaf);
+        // Raiz e emissor incorreto têm o mesmo DN do intermediário, mas outras chaves.
+        assert_eq!(chain, format!("{leaf}{intermediate}"));
+    }
+}
+
+#[test]
+fn tls_chain_uses_signature_when_authority_key_identifier_is_missing() {
+    let pfx = include_bytes!("../../../../tests/fixtures/tls/self-issued-no-aki.pfx");
+    let leaf = include_str!("../../../../tests/fixtures/tls/self-issued-no-aki-client.pem");
+    let intermediate = include_str!("../../../../tests/fixtures/tls/self-issued-intermediate.pem");
+    let (_, chain) = load_certificate_with_chain(pfx, "test-only").unwrap();
+    assert_eq!(chain, format!("{leaf}{intermediate}"));
+}
+
+#[test]
+fn tls_chain_preserves_self_issued_intermediate_without_root_in_pfx() {
+    let pfx = include_bytes!("../../../../tests/fixtures/tls/self-issued-without-root.pfx");
+    let leaf = include_str!("../../../../tests/fixtures/tls/self-issued-client.pem");
+    let intermediate = include_str!("../../../../tests/fixtures/tls/self-issued-intermediate.pem");
+    let (_, chain) = load_certificate_with_chain(pfx, "test-only").unwrap();
+    assert_eq!(chain, format!("{leaf}{intermediate}"));
+}
+
+#[test]
+fn tls_chain_does_not_attach_wrong_key_with_same_issuer_name() {
+    let pfx = include_bytes!("../../../../tests/fixtures/tls/self-issued-no-issuer.pfx");
+    let leaf = include_str!("../../../../tests/fixtures/tls/self-issued-no-aki-client.pem");
+    let (_, chain) = load_certificate_with_chain(pfx, "test-only").unwrap();
+    assert_eq!(chain, leaf);
+}
+
 // ── ensure_modern_pfx ─────────────────────────────────────────
 
 #[test]

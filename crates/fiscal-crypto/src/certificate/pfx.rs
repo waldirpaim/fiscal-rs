@@ -70,8 +70,10 @@ pub fn load_certificate(
 }
 
 /// Carrega a identidade e a cadeia PEM para mTLS, com o certificado do titular
-/// primeiro e os intermediários em ordem de emissão. Não inclui a raiz nem
-/// certificados sem relação com o titular. A raiz deve ser confiada pelo servidor.
+/// primeiro e os intermediários em ordem de emissão, incluindo autoemitidos.
+/// Raízes RSA autofirmadas verificadas são omitidas; para outros algoritmos,
+/// a preservação é conservadora e pode incluir a raiz. A confiança na cadeia
+/// continua sendo verificada pelo servidor TLS.
 ///
 /// O campo `CertificateData::certificate` continua contendo somente o titular,
 /// preservando o contrato usado nas assinaturas XML.
@@ -85,34 +87,7 @@ pub fn load_certificate_with_chain(
 ) -> Result<(CertificateData, String), FiscalError> {
     let parsed = pkcs12_parser::pkcs12_parse(pfx_buffer, passphrase)?;
     let data = certificate_data(&parsed, pfx_buffer, passphrase)?;
-    let mut chain = data.certificate.clone();
-    let mut current = x509_cert::Certificate::from_der(&parsed.cert)
-        .map_err(|e| FiscalError::Certificate(format!("Invalid client certificate: {e}")))?;
-    let mut remaining = parsed
-        .ca
-        .iter()
-        .map(|der| {
-            x509_cert::Certificate::from_der(der)
-                .map(|cert| (der, cert))
-                .map_err(|e| FiscalError::Certificate(format!("Invalid CA certificate: {e}")))
-        })
-        .collect::<Result<Vec<_>, _>>()?;
-
-    // Os SafeBags do PFX não garantem a ordem da cadeia. Cada certificado é
-    // consumido no máximo uma vez, inclusive se houver ciclos ou duplicatas.
-    while current.tbs_certificate().issuer() != current.tbs_certificate().subject() {
-        let Some(index) = remaining.iter().position(|(_, cert)| {
-            cert.tbs_certificate().subject() == current.tbs_certificate().issuer()
-        }) else {
-            break;
-        };
-        let (der, issuer) = remaining.remove(index);
-        if issuer.tbs_certificate().subject() == issuer.tbs_certificate().issuer() {
-            break;
-        }
-        chain.push_str(&x509_der_to_pem(der)?);
-        current = issuer;
-    }
+    let chain = super::chain::build_tls_chain(&parsed, &data.certificate)?;
     Ok((data, chain))
 }
 
@@ -195,7 +170,7 @@ fn pkcs8_der_to_pem(der: &[u8]) -> Result<String, FiscalError> {
 }
 
 /// Convert X.509 DER bytes to PEM string.
-fn x509_der_to_pem(der: &[u8]) -> Result<String, FiscalError> {
+pub(super) fn x509_der_to_pem(der: &[u8]) -> Result<String, FiscalError> {
     let b64 = base64::engine::general_purpose::STANDARD.encode(der);
     Ok(format!(
         "-----BEGIN CERTIFICATE-----\n{}\n-----END CERTIFICATE-----\n",

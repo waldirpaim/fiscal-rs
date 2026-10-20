@@ -25,8 +25,8 @@ des = "0.9"
 pbkdf2 = "0.13"
 hmac = "0.13"
 rand = "0.10"
-sha1 = "0.10"
-sha2 = "0.10"
+sha1 = { version = "0.10", features = ["oid"] }
+sha2 = { version = "0.10", features = ["oid"] }
 chrono = { version = "0.4", features = ["serde"] }
 
 # pkcs12 0.1 e rsa 0.9 ainda usam DER 0.7 e digest 0.10.

@@ -19,6 +19,11 @@ const KEY: &[u8] = include_bytes!("../../../../tests/fixtures/tls/server-key.pem
 const PFX: &[u8] = include_bytes!("../../../../tests/fixtures/tls/client-with-chain.pfx");
 const LEAF_ONLY: &[u8] = include_bytes!("../../../../tests/fixtures/tls/client-without-chain.pfx");
 const PASSWORD: &str = "test-only";
+const ROLLOVER_ROOT: &[u8] = include_bytes!("../../../../tests/fixtures/tls/self-issued-root.pem");
+const ROLLOVER_SERVER: &[u8] =
+    include_bytes!("../../../../tests/fixtures/tls/self-issued-server.pem");
+const ROLLOVER_KEY: &[u8] =
+    include_bytes!("../../../../tests/fixtures/tls/self-issued-server-key.pem");
 
 struct Server {
     port: u16,
@@ -27,10 +32,14 @@ struct Server {
 
 impl Server {
     fn start(expired: bool) -> Self {
+        Self::with_certificates(ROOT, if expired { EXPIRED } else { SERVER }, KEY)
+    }
+
+    fn with_certificates(root: &[u8], certificate: &[u8], key: &[u8]) -> Self {
         let _ = rustls::crypto::ring::default_provider().install_default();
         let mut roots = rustls::RootCertStore::empty();
         roots
-            .add(CertificateDer::from_pem_slice(ROOT).unwrap())
+            .add(CertificateDer::from_pem_slice(root).unwrap())
             .unwrap();
         // O servidor conhece só a raiz: o cliente precisa enviar o intermediário.
         let verifier = rustls::server::WebPkiClientVerifier::builder(Arc::new(roots))
@@ -39,10 +48,8 @@ impl Server {
         let config = rustls::ServerConfig::builder()
             .with_client_cert_verifier(verifier)
             .with_single_cert(
-                vec![
-                    CertificateDer::from_pem_slice(if expired { EXPIRED } else { SERVER }).unwrap(),
-                ],
-                PrivateKeyDer::from_pem_slice(KEY).unwrap(),
+                vec![CertificateDer::from_pem_slice(certificate).unwrap()],
+                PrivateKeyDer::from_pem_slice(key).unwrap(),
             )
             .unwrap();
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
@@ -142,6 +149,35 @@ async fn mtls_sends_intermediate_and_preserves_soap() {
     let request = request.unwrap();
     assert!(request.contains("<probe/>"));
     assert!(request.contains("Envelope"));
+}
+
+async fn assert_rollover_mtls(pfx: &[u8]) {
+    let server = Server::with_certificates(ROLLOVER_ROOT, ROLLOVER_SERVER, ROLLOVER_KEY);
+    let client = SefazClient::with_root_certificates(pfx, PASSWORD, &[ROLLOVER_ROOT]).unwrap();
+    let response = send(&client, &server.url("localhost")).await;
+    let request = server.task.join().unwrap();
+    assert!(
+        response.is_ok(),
+        "client: {response:?}; server: {request:?}"
+    );
+    assert_eq!(response.unwrap(), "<ok/>");
+    assert!(request.unwrap().contains("<probe/>"));
+}
+
+#[tokio::test]
+async fn mtls_preserves_self_issued_intermediate_with_root_first() {
+    assert_rollover_mtls(include_bytes!(
+        "../../../../tests/fixtures/tls/self-issued-root-first.pfx"
+    ))
+    .await;
+}
+
+#[tokio::test]
+async fn mtls_preserves_self_issued_intermediate_without_aki() {
+    assert_rollover_mtls(include_bytes!(
+        "../../../../tests/fixtures/tls/self-issued-no-aki.pfx"
+    ))
+    .await;
 }
 
 #[tokio::test]

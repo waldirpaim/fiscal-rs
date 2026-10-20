@@ -6,6 +6,7 @@
 //! - `c14n` — XML Canonicalization (C14N 1.0) and element helpers
 
 mod c14n;
+mod chain;
 mod pfx;
 mod pkcs12_parser;
 mod sign;
