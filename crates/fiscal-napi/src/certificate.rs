@@ -18,7 +18,7 @@ pub fn ensure_modern_pfx(
 ) -> napi::Result<serde_json::Value> {
     let result = fiscal_crypto::certificate::ensure_modern_pfx(&pfx_buffer, &passphrase)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    serde_json::to_value(&result).map_err(|e| napi::Error::from_reason(e.to_string()))
+    serde_json::to_value(result).map_err(|e| napi::Error::from_reason(e.to_string()))
 }
 
 /// Extract private key and certificate PEM strings from a PKCS#12/PFX buffer.
@@ -37,7 +37,7 @@ pub fn ensure_modern_pfx(
 pub fn load_certificate(pfx_buffer: Buffer, passphrase: String) -> napi::Result<serde_json::Value> {
     let result = fiscal_crypto::certificate::load_certificate(&pfx_buffer, &passphrase)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    serde_json::to_value(&result).map_err(|e| napi::Error::from_reason(e.to_string()))
+    serde_json::to_value(result).map_err(|e| napi::Error::from_reason(e.to_string()))
 }
 
 /// Extract display metadata from a PKCS#12/PFX certificate.
@@ -58,7 +58,7 @@ pub fn get_certificate_info(
 ) -> napi::Result<serde_json::Value> {
     let result = fiscal_crypto::certificate::get_certificate_info(&pfx_buffer, &passphrase)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    serde_json::to_value(&result).map_err(|e| napi::Error::from_reason(e.to_string()))
+    serde_json::to_value(result).map_err(|e| napi::Error::from_reason(e.to_string()))
 }
 
 /// Sign an NF-e XML with RSA-SHA1 enveloped XMLDSig signature.

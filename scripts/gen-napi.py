@@ -403,8 +403,8 @@ def gen_enum_parser(enum_name: str, rust_path: str, source_file: Path) -> str:
     lines.append(f"\nfn {fn_name}(s: &str) -> napi::Result<{rust_path}> {{\n")
     lines.append(f"    match s.to_lowercase().as_str() {{\n")
     for vname, disc in variants:
-        # camelCase version of the variant name for JS
-        js_name = _pascal_to_lower_camel(vname)
+        # Normaliza os aliases conforme o to_lowercase aplicado à entrada.
+        js_name = _pascal_to_lower_camel(vname).lower()
         match_arms = f'"{js_name}"'
         if disc:
             match_arms += f' | "{disc}"'
@@ -509,6 +509,16 @@ def doc_comment(doc: str, indent: str = "") -> str:
     return "".join(f"{indent}/// {l}\n" if l else f"{indent}///\n" for l in lines)
 
 
+def arity_lint_attribute(parameter_count: int, indent: str = "") -> str:
+    """Preserva a API posicional do addon nas assinaturas que excedem o limite."""
+    if parameter_count <= 7:
+        return ""
+    return (
+        f'{indent}#[allow(clippy::too_many_arguments, '
+        'reason = "Preserva a API JavaScript posicional existente")]\n'
+    )
+
+
 def gen_fn_wrapper(fn: FnSig, mod_path: str, indent: str = "") -> str | None:
     """Generate a #[napi] wrapper for a standalone pub fn.
 
@@ -546,6 +556,7 @@ def gen_fn_wrapper(fn: FnSig, mod_path: str, indent: str = "") -> str | None:
 
     lines = []
     lines.append(doc_comment(fn.doc, indent))
+    lines.append(arity_lint_attribute(len(napi_params), indent))
 
     # napi attribute
     if "serde_json::Value" in ret_type and ret_handling == "direct":
@@ -575,9 +586,14 @@ def gen_fn_wrapper(fn: FnSig, mod_path: str, indent: str = "") -> str | None:
         else:
             lines.append(f"{indent}    Ok({mod_path}::{fn.name}({args_str}))\n")
     elif ret_handling == "serde":
-        lines.append(f"{indent}    let result = {mod_path}::{fn.name}({args_str})\n")
+        is_unit = txt(get_ok_type_name(ret_ast)) == "()"
+        binding = "" if is_unit else "let result = "
+        lines.append(f"{indent}    {binding}{mod_path}::{fn.name}({args_str})\n")
         lines.append(f"{indent}        .map_err(|e| napi::Error::from_reason(e.to_string()))?;\n")
-        lines.append(f"{indent}    serde_json::to_value(&result).map_err(|e| napi::Error::from_reason(e.to_string()))\n")
+        if is_unit:
+            lines.append(f"{indent}    Ok(serde_json::Value::Null)\n")
+        else:
+            lines.append(f"{indent}    serde_json::to_value(result).map_err(|e| napi::Error::from_reason(e.to_string()))\n")
     else:
         lines.append(f"{indent}    {mod_path}::{fn.name}({args_str})\n")
         lines.append(f"{indent}        .map_err(|e| napi::Error::from_reason(e.to_string()))\n")
@@ -618,6 +634,7 @@ def gen_method_wrapper(fn: FnSig, indent: str = "    ") -> str | None:
 
     lines = []
     lines.append(doc_comment(fn.doc, indent))
+    lines.append(arity_lint_attribute(len(napi_params), indent))
 
     if ret_handling == "serde":
         lines.append(f'{indent}#[napi(ts_return_type = "Promise<Record<string, unknown>>")]\n')
@@ -838,6 +855,7 @@ fn to_json(v: &impl serde::Serialize) -> napi::Result<serde_json::Value> {
         "fiscal_sefaz::services::SefazService",
         ROOT / "crates/fiscal-sefaz/src/services.rs",
     ))
+    out.append('\n#[cfg(test)]\n#[path = "client_tests.rs"]\nmod tests;\n')
 
     return "".join(out)
 
@@ -948,7 +966,14 @@ def collect_exported_fns(mod_dir: Path) -> list[FnSig]:
 
 
 def gen_lib() -> str:
-    return '#![doc = "Node.js native binding for fiscal-rs via napi-rs."]\n\nmod builder;\nmod certificate;\nmod client;\nmod contingency;\nmod utils;\n'
+    return (
+        '#![doc = "Node.js native binding for fiscal-rs via napi-rs."]\n\n'
+        'mod builder;\nmod certificate;\nmod client;\nmod contingency;\nmod utils;\n'
+        '\n// O napi desativa o registro dos exports em cfg(test). Mantém os pontos de entrada\n'
+        '// alcançáveis nesse build, sem mudar a API Rust de produção.\n'
+        '#[cfg(test)]\n'
+        'pub use {builder::*, certificate::*, client::*, contingency::*, utils::*};\n'
+    )
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
@@ -971,7 +996,7 @@ def main():
         if args.write:
             path = NAPI_SRC / name
             NAPI_SRC.mkdir(parents=True, exist_ok=True)
-            path.write_text(content)
+            path.write_text(content, encoding="utf-8", newline="\n")
         print(f"  {name:20s} {len(content.splitlines()):>4d} lines")
 
     print(f"\nTotal: {sum(len(c.splitlines()) for c in files.values())} lines")

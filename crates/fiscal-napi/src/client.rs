@@ -169,6 +169,10 @@ impl SefazClient {
         to_json(&resp)
     }
 
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "Preserva a API JavaScript posicional existente"
+    )]
     #[napi(ts_return_type = "Promise<Record<string, unknown>>")]
     pub async fn ator_interessado(
         &self,
@@ -203,6 +207,10 @@ impl SefazClient {
         to_json(&resp)
     }
 
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "Preserva a API JavaScript posicional existente"
+    )]
     #[napi(ts_return_type = "Promise<Record<string, unknown>>")]
     pub async fn comprovante_entrega(
         &self,
@@ -243,6 +251,10 @@ impl SefazClient {
         to_json(&resp)
     }
 
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "Preserva a API JavaScript posicional existente"
+    )]
     #[napi(ts_return_type = "Promise<Record<string, unknown>>")]
     pub async fn cancel_comprovante_entrega(
         &self,
@@ -271,6 +283,10 @@ impl SefazClient {
         to_json(&resp)
     }
 
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "Preserva a API JavaScript posicional existente"
+    )]
     #[napi(ts_return_type = "Promise<Record<string, unknown>>")]
     pub async fn insucesso_entrega(
         &self,
@@ -313,6 +329,10 @@ impl SefazClient {
         to_json(&resp)
     }
 
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "Preserva a API JavaScript posicional existente"
+    )]
     #[napi(ts_return_type = "Promise<Record<string, unknown>>")]
     pub async fn cancel_insucesso_entrega(
         &self,
@@ -341,6 +361,10 @@ impl SefazClient {
         to_json(&resp)
     }
 
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "Preserva a API JavaScript posicional existente"
+    )]
     #[napi(ts_return_type = "Promise<Record<string, unknown>>")]
     pub async fn cancel_prorrogacao(
         &self,
@@ -752,6 +776,10 @@ impl SefazClient {
         to_json(&resp)
     }
 
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "Preserva a API JavaScript posicional existente"
+    )]
     #[napi(ts_return_type = "Promise<Record<string, unknown>>")]
     pub async fn cancel_substituicao(
         &self,
@@ -996,6 +1024,10 @@ impl SefazClient {
         to_json(&resp)
     }
 
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "Preserva a API JavaScript posicional existente"
+    )]
     #[napi(ts_return_type = "Promise<Record<string, unknown>>")]
     pub async fn rtc_aceite_debito(
         &self,
@@ -1024,6 +1056,10 @@ impl SefazClient {
         to_json(&resp)
     }
 
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "Preserva a API JavaScript posicional existente"
+    )]
     #[napi(ts_return_type = "Promise<Record<string, unknown>>")]
     pub async fn rtc_manif_transf_cred_ibs(
         &self,
@@ -1052,6 +1088,10 @@ impl SefazClient {
         to_json(&resp)
     }
 
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "Preserva a API JavaScript posicional existente"
+    )]
     #[napi(ts_return_type = "Promise<Record<string, unknown>>")]
     pub async fn rtc_manif_transf_cred_cbs(
         &self,
@@ -1080,6 +1120,10 @@ impl SefazClient {
         to_json(&resp)
     }
 
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "Preserva a API JavaScript posicional existente"
+    )]
     #[napi(ts_return_type = "Promise<Record<string, unknown>>")]
     pub async fn rtc_cancela_evento(
         &self,
@@ -1110,6 +1154,10 @@ impl SefazClient {
         to_json(&resp)
     }
 
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "Preserva a API JavaScript posicional existente"
+    )]
     #[napi(ts_return_type = "Promise<Record<string, unknown>>")]
     pub async fn rtc_atualizacao_data_entrega(
         &self,
@@ -1163,23 +1211,27 @@ fn parse_sefaz_environment(s: &str) -> napi::Result<SefazEnvironment> {
 
 fn parse_sefaz_service(s: &str) -> napi::Result<fiscal_sefaz::services::SefazService> {
     match s.to_lowercase().as_str() {
-        "statusServico" => Ok(fiscal_sefaz::services::SefazService::StatusServico),
+        "statusservico" => Ok(fiscal_sefaz::services::SefazService::StatusServico),
         "autorizacao" => Ok(fiscal_sefaz::services::SefazService::Autorizacao),
-        "retAutorizacao" => Ok(fiscal_sefaz::services::SefazService::RetAutorizacao),
-        "consultaProtocolo" => Ok(fiscal_sefaz::services::SefazService::ConsultaProtocolo),
+        "retautorizacao" => Ok(fiscal_sefaz::services::SefazService::RetAutorizacao),
+        "consultaprotocolo" => Ok(fiscal_sefaz::services::SefazService::ConsultaProtocolo),
         "inutilizacao" => Ok(fiscal_sefaz::services::SefazService::Inutilizacao),
-        "recepcaoEvento" => Ok(fiscal_sefaz::services::SefazService::RecepcaoEvento),
-        "distribuicaoDFe" => Ok(fiscal_sefaz::services::SefazService::DistribuicaoDFe),
-        "consultaCadastro" => Ok(fiscal_sefaz::services::SefazService::ConsultaCadastro),
-        "cscNFCe" => Ok(fiscal_sefaz::services::SefazService::CscNFCe),
-        "recepcaoEPEC" => Ok(fiscal_sefaz::services::SefazService::RecepcaoEPEC),
-        "ePECStatusServico" => Ok(fiscal_sefaz::services::SefazService::EPECStatusServico),
-        "recepcaoEpecNfce" => Ok(fiscal_sefaz::services::SefazService::RecepcaoEpecNfce),
-        "epecNfceStatusServico" => Ok(fiscal_sefaz::services::SefazService::EpecNfceStatusServico),
-        "nfeConsultaDest" => Ok(fiscal_sefaz::services::SefazService::NfeConsultaDest),
-        "nfeDownloadNF" => Ok(fiscal_sefaz::services::SefazService::NfeDownloadNF),
+        "recepcaoevento" => Ok(fiscal_sefaz::services::SefazService::RecepcaoEvento),
+        "distribuicaodfe" => Ok(fiscal_sefaz::services::SefazService::DistribuicaoDFe),
+        "consultacadastro" => Ok(fiscal_sefaz::services::SefazService::ConsultaCadastro),
+        "cscnfce" => Ok(fiscal_sefaz::services::SefazService::CscNFCe),
+        "recepcaoepec" => Ok(fiscal_sefaz::services::SefazService::RecepcaoEPEC),
+        "epecstatusservico" => Ok(fiscal_sefaz::services::SefazService::EPECStatusServico),
+        "recepcaoepecnfce" => Ok(fiscal_sefaz::services::SefazService::RecepcaoEpecNfce),
+        "epecnfcestatusservico" => Ok(fiscal_sefaz::services::SefazService::EpecNfceStatusServico),
+        "nfeconsultadest" => Ok(fiscal_sefaz::services::SefazService::NfeConsultaDest),
+        "nfedownloadnf" => Ok(fiscal_sefaz::services::SefazService::NfeDownloadNF),
         _ => Err(napi::Error::from_reason(format!(
             "Invalid SefazService: \"{s}\""
         ))),
     }
 }
+
+#[cfg(test)]
+#[path = "client_tests.rs"]
+mod tests;

@@ -103,39 +103,6 @@ pub(crate) fn format_datetime_cte(dt: &chrono::DateTime<chrono::FixedOffset>, uf
     local.format("%Y-%m-%dT%H:%M:%S%:z").to_string()
 }
 
-#[cfg(test)]
-mod datetime_tests {
-    use chrono::{FixedOffset, TimeZone};
-
-    use super::format_datetime_cte;
-
-    #[test]
-    fn am_converts_brt_to_amt() {
-        // 10:30 BRT (UTC-3) = 09:30 AMT (UTC-4)
-        let brt = FixedOffset::west_opt(3 * 3600).unwrap();
-        let dt = brt.with_ymd_and_hms(2026, 1, 15, 10, 30, 0).unwrap();
-        let out = format_datetime_cte(&dt, "AM");
-        assert_eq!(out, "2026-01-15T09:30:00-04:00");
-    }
-
-    #[test]
-    fn sp_stays_brt() {
-        let brt = FixedOffset::west_opt(3 * 3600).unwrap();
-        let dt = brt.with_ymd_and_hms(2026, 6, 10, 14, 0, 0).unwrap();
-        let out = format_datetime_cte(&dt, "SP");
-        assert_eq!(out, "2026-06-10T14:00:00-03:00");
-    }
-
-    #[test]
-    fn ac_converts_brt_to_act() {
-        // 10:00 BRT (UTC-3) = 08:00 ACT (UTC-5)
-        let brt = FixedOffset::west_opt(3 * 3600).unwrap();
-        let dt = brt.with_ymd_and_hms(2026, 3, 1, 10, 0, 0).unwrap();
-        let out = format_datetime_cte(&dt, "AC");
-        assert_eq!(out, "2026-03-01T08:00:00-05:00");
-    }
-}
-
 /// Emit a `<CNPJ>` or `<CPF>` element from a [`Documento`].
 pub(crate) fn build_documento(doc: &Documento) -> String {
     match doc {
@@ -700,4 +667,37 @@ pub(crate) fn build_inf_resp_tec(rt: &InfRespTec) -> String {
             tag("fone", &[], TagContent::Text(&rt.fone)),
         ]),
     )
+}
+
+#[cfg(test)]
+mod datetime_tests {
+    use chrono::{FixedOffset, TimeZone};
+
+    use super::format_datetime_cte;
+
+    #[test]
+    fn am_converts_brt_to_amt() {
+        // 10:30 BRT (UTC-3) = 09:30 AMT (UTC-4)
+        let brt = FixedOffset::west_opt(3 * 3600).unwrap();
+        let dt = brt.with_ymd_and_hms(2026, 1, 15, 10, 30, 0).unwrap();
+        let out = format_datetime_cte(&dt, "AM");
+        assert_eq!(out, "2026-01-15T09:30:00-04:00");
+    }
+
+    #[test]
+    fn sp_stays_brt() {
+        let brt = FixedOffset::west_opt(3 * 3600).unwrap();
+        let dt = brt.with_ymd_and_hms(2026, 6, 10, 14, 0, 0).unwrap();
+        let out = format_datetime_cte(&dt, "SP");
+        assert_eq!(out, "2026-06-10T14:00:00-03:00");
+    }
+
+    #[test]
+    fn ac_converts_brt_to_act() {
+        // 10:00 BRT (UTC-3) = 08:00 ACT (UTC-5)
+        let brt = FixedOffset::west_opt(3 * 3600).unwrap();
+        let dt = brt.with_ymd_and_hms(2026, 3, 1, 10, 0, 0).unwrap();
+        let out = format_datetime_cte(&dt, "AC");
+        assert_eq!(out, "2026-03-01T08:00:00-05:00");
+    }
 }
