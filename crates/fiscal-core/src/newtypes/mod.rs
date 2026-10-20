@@ -11,6 +11,9 @@ mod product_codes;
 mod state;
 mod tax_id;
 
+#[cfg(test)]
+mod tests;
+
 pub use access_key::AccessKey;
 pub use monetary::{Cents, Rate, Rate4};
 pub use product_codes::{Cfop, Gtin, Ncm};

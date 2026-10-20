@@ -90,7 +90,6 @@ impl fmt::Display for StateCode {
 /// IBGE numeric state or city code (e.g. `"41"` for PR, `"4106852"` for
 /// Cruzmaltina).
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(transparent)]
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[cfg_attr(feature = "ts", ts(export))]
 pub struct IbgeCode(pub String);

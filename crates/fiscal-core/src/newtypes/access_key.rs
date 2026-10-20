@@ -17,7 +17,6 @@ use crate::state_codes::get_state_by_code;
 /// + tpEmis(1) + cNF(8) + cDV(1) = 44 digits
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(transparent)]
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[cfg_attr(feature = "ts", ts(export))]
 pub struct AccessKey(pub String);
