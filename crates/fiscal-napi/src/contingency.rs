@@ -18,6 +18,12 @@ pub struct ContingencyManager {
     inner: RustContingency,
 }
 
+impl Default for ContingencyManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[napi]
 impl ContingencyManager {
     /// Create a new contingency manager in normal mode (no active contingency).

@@ -13,7 +13,7 @@ pub fn build_invoice(config: serde_json::Value) -> napi::Result<serde_json::Valu
     let result = fiscal_core::xml_builder::build_from_data(&data)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
 
-    serde_json::to_value(&result).map_err(|e| napi::Error::from_reason(e.to_string()))
+    serde_json::to_value(result).map_err(|e| napi::Error::from_reason(e.to_string()))
 }
 
 /// Build and sign an NF-e/NFC-e XML in one step.

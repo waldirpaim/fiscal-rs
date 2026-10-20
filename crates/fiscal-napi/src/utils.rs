@@ -118,7 +118,7 @@ pub fn xml_to_value(xml: String) -> napi::Result<serde_json::Value> {
 pub fn xml_to_map(xml: String) -> napi::Result<serde_json::Value> {
     let result = fiscal_core::standardize::xml_to_map(&xml)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    serde_json::to_value(&result).map_err(|e| napi::Error::from_reason(e.to_string()))
+    serde_json::to_value(result).map_err(|e| napi::Error::from_reason(e.to_string()))
 }
 
 // ── Convert ─────────────────────────────────────────────────────
@@ -307,7 +307,7 @@ pub fn calculate_check_digit(gtin: String) -> napi::Result<u8> {
 pub fn get_state_code(uf: String) -> napi::Result<serde_json::Value> {
     let result = fiscal_core::state_codes::get_state_code(&uf)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    serde_json::to_value(&result).map_err(|e| napi::Error::from_reason(e.to_string()))
+    serde_json::to_value(result).map_err(|e| napi::Error::from_reason(e.to_string()))
 }
 
 /// Get the UF abbreviation for an IBGE numeric code.
@@ -320,7 +320,7 @@ pub fn get_state_code(uf: String) -> napi::Result<serde_json::Value> {
 pub fn get_state_by_code(code: String) -> napi::Result<serde_json::Value> {
     let result = fiscal_core::state_codes::get_state_by_code(&code)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    serde_json::to_value(&result).map_err(|e| napi::Error::from_reason(e.to_string()))
+    serde_json::to_value(result).map_err(|e| napi::Error::from_reason(e.to_string()))
 }
 
 // ── Timezone ────────────────────────────────────────────────────
@@ -473,9 +473,9 @@ pub fn replace_unacceptable_characters(input: String) -> napi::Result<String> {
 /// ```
 #[napi]
 pub fn validate_xml(xml: String) -> napi::Result<serde_json::Value> {
-    let result = fiscal_core::xml_utils::validate_xml(&xml)
+    fiscal_core::xml_utils::validate_xml(&xml)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    serde_json::to_value(&result).map_err(|e| napi::Error::from_reason(e.to_string()))
+    Ok(serde_json::Value::Null)
 }
 
 /// Remove characters that are invalid in XML 1.0 documents.
@@ -560,7 +560,7 @@ pub fn clear_xml_string(input: String, remove_encoding_tag: bool) -> napi::Resul
 pub fn validate_config(json: String) -> napi::Result<serde_json::Value> {
     let result = fiscal_core::config::validate_config(&json)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    serde_json::to_value(&result).map_err(|e| napi::Error::from_reason(e.to_string()))
+    serde_json::to_value(result).map_err(|e| napi::Error::from_reason(e.to_string()))
 }
 
 // ── Validate ────────────────────────────────────────────────────
@@ -628,9 +628,9 @@ pub fn is_valid_xml(content: String) -> napi::Result<bool> {
 /// ```
 #[napi]
 pub fn validate_nfe_xml(xml: String, version: String) -> napi::Result<serde_json::Value> {
-    let result = fiscal_sefaz::validate::validate_nfe_xml(&xml, &version)
+    fiscal_sefaz::validate::validate_nfe_xml(&xml, &version)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    serde_json::to_value(&result).map_err(|e| napi::Error::from_reason(e.to_string()))
+    Ok(serde_json::Value::Null)
 }
 
 /// Extract validation data from an authorized NF-e XML for comparison
@@ -648,7 +648,7 @@ pub fn validate_nfe_xml(xml: String, version: String) -> napi::Result<serde_json
 pub fn extract_nfe_validation_data(nfe_xml: String) -> napi::Result<serde_json::Value> {
     let result = fiscal_sefaz::validate::extract_nfe_validation_data(&nfe_xml)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    serde_json::to_value(&result).map_err(|e| napi::Error::from_reason(e.to_string()))
+    serde_json::to_value(result).map_err(|e| napi::Error::from_reason(e.to_string()))
 }
 
 /// Validate an authorized NF-e by comparing local data against a SEFAZ
@@ -692,7 +692,7 @@ pub fn validate_authorized_nfe(
         &sefaz_response_xml,
     )
     .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    serde_json::to_value(&result).map_err(|e| napi::Error::from_reason(e.to_string()))
+    serde_json::to_value(result).map_err(|e| napi::Error::from_reason(e.to_string()))
 }
 
 /// Validate the structure of a SEFAZ request XML envelope.
@@ -718,9 +718,9 @@ pub fn validate_request_xml(
     version: String,
     method: String,
 ) -> napi::Result<serde_json::Value> {
-    let result = fiscal_sefaz::validate::validate_request_xml(&xml, &version, &method)
+    fiscal_sefaz::validate::validate_request_xml(&xml, &version, &method)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    serde_json::to_value(&result).map_err(|e| napi::Error::from_reason(e.to_string()))
+    Ok(serde_json::Value::Null)
 }
 
 // ── SEFAZ URLs ──────────────────────────────────────────────────
@@ -1052,6 +1052,10 @@ pub fn build_consulta_recibo_request(receipt: String, environment: String) -> na
     Ok(fiscal_sefaz::request_builders::build_consulta_recibo_request(&receipt, sefaz_environment))
 }
 
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Preserva a API JavaScript posicional existente"
+)]
 #[napi]
 pub fn build_inutilizacao_request(
     year: u16,
@@ -1196,7 +1200,7 @@ pub fn extract_epec_data(
     let result =
         fiscal_sefaz::request_builders::extract_epec_data(&nfe_xml, ver_aplic_override.as_deref())
             .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    serde_json::to_value(&result).map_err(|e| napi::Error::from_reason(e.to_string()))
+    serde_json::to_value(result).map_err(|e| napi::Error::from_reason(e.to_string()))
 }
 
 /// Build a SEFAZ EPEC (Evento Prévio de Emissão em Contingência) event
@@ -1274,7 +1278,7 @@ pub fn extract_epec_nfce_data(
         ver_aplic_override.as_deref(),
     )
     .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    serde_json::to_value(&result).map_err(|e| napi::Error::from_reason(e.to_string()))
+    serde_json::to_value(result).map_err(|e| napi::Error::from_reason(e.to_string()))
 }
 
 /// Build a SEFAZ EPEC NFC-e event request XML (`tpEvento=110140`).
@@ -1464,6 +1468,10 @@ pub fn build_manifesta_request(
     ))
 }
 
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Preserva a API JavaScript posicional existente"
+)]
 #[napi]
 pub fn build_cancel_substituicao_request(
     access_key: String,
@@ -1490,6 +1498,10 @@ pub fn build_cancel_substituicao_request(
     )
 }
 
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Preserva a API JavaScript posicional existente"
+)]
 #[napi]
 pub fn build_ator_interessado_request(
     access_key: String,
@@ -1520,6 +1532,10 @@ pub fn build_ator_interessado_request(
     )
 }
 
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Preserva a API JavaScript posicional existente"
+)]
 #[napi]
 pub fn build_comprovante_entrega_request(
     access_key: String,
@@ -1580,6 +1596,10 @@ pub fn build_cancel_comprovante_entrega_request(
     )
 }
 
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Preserva a API JavaScript posicional existente"
+)]
 #[napi]
 pub fn build_insucesso_entrega_request(
     access_key: String,
@@ -1667,6 +1687,10 @@ pub fn build_rtc_info_pagto_integral(
     )
 }
 
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Preserva a API JavaScript posicional existente"
+)]
 #[napi]
 pub fn build_rtc_aceite_debito(
     access_key: String,
@@ -1691,6 +1715,10 @@ pub fn build_rtc_aceite_debito(
     ))
 }
 
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Preserva a API JavaScript posicional existente"
+)]
 #[napi]
 pub fn build_rtc_manif_transf_cred_ibs(
     access_key: String,
@@ -1717,6 +1745,10 @@ pub fn build_rtc_manif_transf_cred_ibs(
     )
 }
 
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Preserva a API JavaScript posicional existente"
+)]
 #[napi]
 pub fn build_rtc_manif_transf_cred_cbs(
     access_key: String,
@@ -1743,6 +1775,10 @@ pub fn build_rtc_manif_transf_cred_cbs(
     )
 }
 
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Preserva a API JavaScript posicional existente"
+)]
 #[napi]
 pub fn build_rtc_cancela_evento(
     access_key: String,
@@ -1769,6 +1805,10 @@ pub fn build_rtc_cancela_evento(
     ))
 }
 
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Preserva a API JavaScript posicional existente"
+)]
 #[napi]
 pub fn build_rtc_atualizacao_data_entrega(
     access_key: String,
@@ -1811,7 +1851,7 @@ pub fn build_rtc_atualizacao_data_entrega(
 pub fn parse_autorizacao_response(xml: String) -> napi::Result<serde_json::Value> {
     let result = fiscal_sefaz::response_parsers::parse_autorizacao_response(&xml)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    serde_json::to_value(&result).map_err(|e| napi::Error::from_reason(e.to_string()))
+    serde_json::to_value(result).map_err(|e| napi::Error::from_reason(e.to_string()))
 }
 
 /// Parse a SEFAZ consulta recibo response (`retConsReciNFe`).
@@ -1828,7 +1868,7 @@ pub fn parse_autorizacao_response(xml: String) -> napi::Result<serde_json::Value
 pub fn parse_consulta_recibo_response(xml: String) -> napi::Result<serde_json::Value> {
     let result = fiscal_sefaz::response_parsers::parse_consulta_recibo_response(&xml)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    serde_json::to_value(&result).map_err(|e| napi::Error::from_reason(e.to_string()))
+    serde_json::to_value(result).map_err(|e| napi::Error::from_reason(e.to_string()))
 }
 
 /// Parse a SEFAZ consulta situação response (`retConsSitNFe`).
@@ -1845,7 +1885,7 @@ pub fn parse_consulta_recibo_response(xml: String) -> napi::Result<serde_json::V
 pub fn parse_consulta_situacao_response(xml: String) -> napi::Result<serde_json::Value> {
     let result = fiscal_sefaz::response_parsers::parse_consulta_situacao_response(&xml)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    serde_json::to_value(&result).map_err(|e| napi::Error::from_reason(e.to_string()))
+    serde_json::to_value(result).map_err(|e| napi::Error::from_reason(e.to_string()))
 }
 
 /// Parse a SEFAZ cancellation event response (`retEvento`).
@@ -1862,7 +1902,7 @@ pub fn parse_consulta_situacao_response(xml: String) -> napi::Result<serde_json:
 pub fn parse_cancellation_response(xml: String) -> napi::Result<serde_json::Value> {
     let result = fiscal_sefaz::response_parsers::parse_cancellation_response(&xml)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    serde_json::to_value(&result).map_err(|e| napi::Error::from_reason(e.to_string()))
+    serde_json::to_value(result).map_err(|e| napi::Error::from_reason(e.to_string()))
 }
 
 /// Parse a SEFAZ inutilização response (`retInutNFe`).
@@ -1878,7 +1918,7 @@ pub fn parse_cancellation_response(xml: String) -> napi::Result<serde_json::Valu
 pub fn parse_inutilizacao_response(xml: String) -> napi::Result<serde_json::Value> {
     let result = fiscal_sefaz::response_parsers::parse_inutilizacao_response(&xml)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    serde_json::to_value(&result).map_err(|e| napi::Error::from_reason(e.to_string()))
+    serde_json::to_value(result).map_err(|e| napi::Error::from_reason(e.to_string()))
 }
 
 /// Parse a SEFAZ DistDFe response (`retDistDFeInt`).
@@ -1895,7 +1935,7 @@ pub fn parse_inutilizacao_response(xml: String) -> napi::Result<serde_json::Valu
 pub fn parse_dist_dfe_response(xml: String) -> napi::Result<serde_json::Value> {
     let result = fiscal_sefaz::response_parsers::parse_dist_dfe_response(&xml)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    serde_json::to_value(&result).map_err(|e| napi::Error::from_reason(e.to_string()))
+    serde_json::to_value(result).map_err(|e| napi::Error::from_reason(e.to_string()))
 }
 
 /// Parse a SEFAZ Cadastro response (`retConsCad`).
@@ -1911,7 +1951,7 @@ pub fn parse_dist_dfe_response(xml: String) -> napi::Result<serde_json::Value> {
 pub fn parse_cadastro_response(xml: String) -> napi::Result<serde_json::Value> {
     let result = fiscal_sefaz::response_parsers::parse_cadastro_response(&xml)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    serde_json::to_value(&result).map_err(|e| napi::Error::from_reason(e.to_string()))
+    serde_json::to_value(result).map_err(|e| napi::Error::from_reason(e.to_string()))
 }
 
 /// Parse a SEFAZ NFC-e CSC administration response (`retAdmCscNFCe`).
@@ -1928,7 +1968,7 @@ pub fn parse_cadastro_response(xml: String) -> napi::Result<serde_json::Value> {
 pub fn parse_csc_response(xml: String) -> napi::Result<serde_json::Value> {
     let result = fiscal_sefaz::response_parsers::parse_csc_response(&xml)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    serde_json::to_value(&result).map_err(|e| napi::Error::from_reason(e.to_string()))
+    serde_json::to_value(result).map_err(|e| napi::Error::from_reason(e.to_string()))
 }
 
 /// Parse a SEFAZ service status response (`retConsStatServ`).
@@ -1945,7 +1985,7 @@ pub fn parse_csc_response(xml: String) -> napi::Result<serde_json::Value> {
 pub fn parse_status_response(xml: String) -> napi::Result<serde_json::Value> {
     let result = fiscal_sefaz::response_parsers::parse_status_response(&xml)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    serde_json::to_value(&result).map_err(|e| napi::Error::from_reason(e.to_string()))
+    serde_json::to_value(result).map_err(|e| napi::Error::from_reason(e.to_string()))
 }
 
 // ── Enum Parsers ─────────────────────────────────────────────
