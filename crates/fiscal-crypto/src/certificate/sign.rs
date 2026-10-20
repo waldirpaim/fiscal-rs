@@ -419,7 +419,7 @@ pub fn sign_cte_event_xml_with_algorithm(
 /// Returns [`FiscalError::Certificate`] if the private key cannot be parsed or
 /// the signing operation fails.
 pub fn rsa_sha1_base64(data: &[u8], private_key_pem: &str) -> Result<String, FiscalError> {
-    use pkcs8::DecodePrivateKey as _;
+    use rsa::pkcs8::DecodePrivateKey as _;
 
     let private_key = rsa::RsaPrivateKey::from_pkcs8_pem(private_key_pem)
         .map_err(|e| FiscalError::Certificate(format!("Failed to parse private key: {e}")))?;
@@ -519,7 +519,7 @@ pub fn sign_sp_lote_xml(
     );
 
     // 6. RSA-SHA1 sign (pure Rust)
-    use pkcs8::DecodePrivateKey as _;
+    use rsa::pkcs8::DecodePrivateKey as _;
 
     let private_key = rsa::RsaPrivateKey::from_pkcs8_pem(private_key_pem)
         .map_err(|e| FiscalError::Certificate(format!("Failed to parse private key: {e}")))?;
@@ -606,7 +606,7 @@ fn sign_xml_generic(
     );
 
     // 9. RSA sign the canonical SignedInfo with the selected digest algorithm
-    use pkcs8::DecodePrivateKey as _;
+    use rsa::pkcs8::DecodePrivateKey as _;
 
     let private_key = rsa::RsaPrivateKey::from_pkcs8_pem(private_key_pem)
         .map_err(|e| FiscalError::Certificate(format!("Failed to parse private key: {e}")))?;

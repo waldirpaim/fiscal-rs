@@ -23,7 +23,10 @@ quick-xml = "0.41"
 # no toolchain). O ring cross-compila limpo; com um único provider nas
 # features o rustls o adota como default sem código extra.
 reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider"], optional = true }
-rustls = { version = "0.23", default-features = false, features = ["ring", "logging", "std", "tls12"], optional = true }
+rustls = { version = "0.23.46", default-features = false, features = ["ring", "logging", "std", "tls12"], optional = true }
 flate2 = "1"
 base64 = "0.22"
 serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt"] }

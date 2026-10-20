@@ -267,8 +267,8 @@ mod sign_xml {
     fn self_verifies_signature_with_rsa_crate() {
         use base64::Engine;
         use base64::engine::general_purpose::STANDARD as BASE64;
-        use pkcs8::DecodePrivateKey as _;
         use rsa::pkcs1v15::Pkcs1v15Sign;
+        use rsa::pkcs8::DecodePrivateKey as _;
 
         let cert_data = fiscal::certificate::load_certificate(PFX_CNPJ, PASSWORD).unwrap();
         let signed = fiscal::certificate::sign_xml(

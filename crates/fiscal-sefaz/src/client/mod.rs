@@ -29,6 +29,8 @@
 mod authorize;
 mod delivery;
 mod events;
+#[cfg(test)]
+mod nfce_tests;
 mod rtc;
 
 use std::fmt;
@@ -74,6 +76,8 @@ pub struct SefazClient {
     private_key: String,
     /// PEM-encoded X.509 certificate, embedded in event signatures.
     certificate: String,
+    #[cfg(test)]
+    test_transport: Option<nfce_tests::TestTransport>,
 }
 
 impl fmt::Debug for SefazClient {
@@ -126,6 +130,8 @@ impl SefazClient {
             http,
             private_key: cert_data.private_key,
             certificate: cert_data.certificate,
+            #[cfg(test)]
+            test_transport: None,
         })
     }
 
@@ -253,6 +259,11 @@ impl SefazClient {
     ) -> Result<String, FiscalError> {
         let meta = service.meta();
         let envelope = soap::build_envelope(request_xml, envelope_uf, &meta)?;
+
+        #[cfg(test)]
+        if let Some(transport) = &self.test_transport {
+            return Ok(transport.send(url, &envelope));
+        }
         let action = soap::build_action(&meta);
 
         let content_type = format!("application/soap+xml;charset=utf-8;action=\"{action}\"");
@@ -544,7 +555,7 @@ mod tests {
     }
 
     // Test certificate fixture shared with the `fiscal-crypto` test suite.
-    fn test_pfx() -> Vec<u8> {
+    pub(super) fn test_pfx() -> Vec<u8> {
         let path = concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/../..",
@@ -553,7 +564,7 @@ mod tests {
         std::fs::read(path).expect("test PFX not found")
     }
 
-    const TEST_PASSWORD: &str = "minhasenha";
+    pub(super) const TEST_PASSWORD: &str = "minhasenha";
     const TEST_ACCESS_KEY: &str = "41250106157250000116550010000000011000000017";
 
     #[test]

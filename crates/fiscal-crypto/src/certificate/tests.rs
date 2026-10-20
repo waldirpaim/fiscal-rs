@@ -523,8 +523,8 @@ fn sign_xml_sha256_verify_roundtrip() {
     );
 
     // Verify the signature using the certificate's public key (pure Rust)
-    use pkcs8::DecodePrivateKey as _;
     use rsa::pkcs1v15::Pkcs1v15Sign;
+    use rsa::pkcs8::DecodePrivateKey as _;
 
     // Parse private key and extract public key
     let private_key = rsa::RsaPrivateKey::from_pkcs8_pem(&cert_data.private_key).unwrap();
@@ -577,8 +577,8 @@ fn signature_value_sha1_fixed_vector() {
     );
 
     // Verify the signature cryptographically using the cert's public key
-    use pkcs8::DecodePrivateKey as _;
     use rsa::pkcs1v15::Pkcs1v15Sign;
+    use rsa::pkcs8::DecodePrivateKey as _;
     let private_key = rsa::RsaPrivateKey::from_pkcs8_pem(&cert_data.private_key).unwrap();
     let pubkey = private_key.to_public_key();
 
