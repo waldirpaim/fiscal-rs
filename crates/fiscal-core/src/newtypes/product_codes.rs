@@ -18,7 +18,6 @@ use crate::FiscalError;
 ///
 /// `Display` renders the stored value as-is.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(transparent)]
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[cfg_attr(feature = "ts", ts(export))]
 pub struct Gtin(pub String);
@@ -63,7 +62,6 @@ impl fmt::Display for Gtin {
 ///
 /// `Display` renders the 8-digit string.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(transparent)]
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[cfg_attr(feature = "ts", ts(export))]
 pub struct Ncm(pub String);
@@ -108,7 +106,6 @@ impl fmt::Display for Ncm {
 ///
 /// `Display` renders the 4-digit string.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(transparent)]
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[cfg_attr(feature = "ts", ts(export))]
 pub struct Cfop(pub String);

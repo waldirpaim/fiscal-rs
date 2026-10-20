@@ -18,7 +18,6 @@ use crate::FiscalError;
 ///
 /// `Display` renders the raw digits (no formatting).
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(transparent)]
 #[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 #[cfg_attr(feature = "ts", ts(export))]
 pub struct TaxId(pub String);
