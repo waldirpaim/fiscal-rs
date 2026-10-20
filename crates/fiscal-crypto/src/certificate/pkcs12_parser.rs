@@ -13,7 +13,7 @@
 
 use cbc::cipher::block_padding::Pkcs7;
 use cbc::cipher::{BlockModeDecrypt, KeyIvInit};
-use der::Decode;
+use der_legacy::Decode;
 use fiscal_core::FiscalError;
 use pkcs12::kdf::{Pkcs12KeyType, derive_key_utf8};
 
@@ -273,14 +273,14 @@ fn decrypt_pbes2(
     // Derive key using PBKDF2 with appropriate PRF
     let mut key = vec![0u8; key_len];
     if prf_is_sha256 {
-        let _ = pbkdf2::pbkdf2::<hmac::Hmac<sha2::Sha256>>(
+        let _ = pbkdf2::pbkdf2::<hmac::Hmac<sha2_next::Sha256>>(
             password.as_bytes(),
             salt_val,
             iterations,
             &mut key,
         );
     } else {
-        let _ = pbkdf2::pbkdf2::<hmac::Hmac<sha1::Sha1>>(
+        let _ = pbkdf2::pbkdf2::<hmac::Hmac<sha1_next::Sha1>>(
             password.as_bytes(),
             salt_val,
             iterations,
@@ -440,7 +440,7 @@ fn decrypt_key_from_bag_value(bag_value: &[u8], password: &str) -> Result<Vec<u8
 
 /// Parse SafeContents (SEQUENCE OF SafeBag) from DER bytes using the `pkcs12` crate.
 fn parse_safe_contents_der(data: &[u8]) -> Result<Vec<pkcs12::safe_bag::SafeBag>, FiscalError> {
-    let safe_bags: pkcs12::safe_bag::SafeContents = der::Decode::from_der(data)
+    let safe_bags: pkcs12::safe_bag::SafeContents = der_legacy::Decode::from_der(data)
         .map_err(|e| FiscalError::Certificate(format!("SafeContents decode: {e}")))?;
     Ok(safe_bags)
 }
@@ -543,7 +543,7 @@ fn verify_pfx_mac(
         .map_err(|e| FiscalError::Certificate(format!("MAC key derivation: {e}")))?;
 
         use hmac::Mac as _;
-        let mut mac = <hmac::Hmac<sha2::Sha256> as hmac::Mac>::new_from_slice(&mac_key)
+        let mut mac = <hmac::Hmac<sha2_next::Sha256> as hmac::KeyInit>::new_from_slice(&mac_key)
             .map_err(|e| FiscalError::Certificate(format!("HMAC-SHA256 init: {e}")))?;
         mac.update(auth_safe_bytes);
         let computed = mac.finalize().into_bytes();
@@ -560,7 +560,7 @@ fn verify_pfx_mac(
         .map_err(|e| FiscalError::Certificate(format!("MAC key derivation: {e}")))?;
 
         use hmac::Mac as _;
-        let mut mac = <hmac::Hmac<sha1::Sha1> as hmac::Mac>::new_from_slice(&mac_key)
+        let mut mac = <hmac::Hmac<sha1_next::Sha1> as hmac::KeyInit>::new_from_slice(&mac_key)
             .map_err(|e| FiscalError::Certificate(format!("HMAC-SHA1 init: {e}")))?;
         mac.update(auth_safe_bytes);
         let computed = mac.finalize().into_bytes();

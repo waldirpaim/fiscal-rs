@@ -12,9 +12,9 @@ categories = ["cryptography"]
 [dependencies]
 fiscal-core = { path = "../fiscal-core", version = "0.7.3" }
 base64 = "0.22"
-der = { version = "0.7", features = ["derive", "oid", "alloc"] }
-x509-cert = { version = "0.2", features = ["pem"] }
-pkcs8 = { version = "0.10", features = ["pem", "alloc"] }
+der = { version = "0.8", features = ["derive", "oid", "alloc"] }
+x509-cert = { version = "0.3", features = ["pem"] }
+pkcs8 = { version = "0.11", features = ["pem", "alloc"] }
 rsa = { version = "0.9" }
 pkcs12 = { version = "0.1", features = ["kdf"] }
 rc2 = "0.9"
@@ -22,9 +22,16 @@ cbc = "0.2"
 cipher = "0.5"
 aes = "0.9"
 des = "0.9"
-pbkdf2 = "0.12"
-hmac = "0.12"
-rand = "0.9"
+pbkdf2 = "0.13"
+hmac = "0.13"
+rand = "0.10"
 sha1 = "0.10"
 sha2 = "0.10"
 chrono = { version = "0.4", features = ["serde"] }
+
+# pkcs12 0.1 e rsa 0.9 ainda usam DER 0.7 e digest 0.10.
+# Mantém a compatibilidade sem adotar versões preliminares dessas bibliotecas.
+der-legacy = { package = "der", version = "0.7" }
+# HMAC/PBKDF2 novos exigem digest 0.11; os hashes antigos atendem PKCS12/RSA.
+sha1-next = { package = "sha1", version = "0.11" }
+sha2-next = { package = "sha2", version = "0.11" }

@@ -3,9 +3,9 @@
 //! Pure-Rust implementation — no OpenSSL dependency.
 
 use base64::Engine as _;
+use der::Decode as _;
 use fiscal_core::FiscalError;
 use fiscal_core::types::{CertificateData, CertificateInfo};
-use x509_cert::der::Decode as _;
 
 use super::pkcs12_parser;
 
@@ -101,16 +101,16 @@ pub fn get_certificate_info(
     let cert = x509_cert::Certificate::from_der(&parsed.cert)
         .map_err(|e| FiscalError::Certificate(format!("Failed to parse certificate: {e}")))?;
 
-    let common_name = extract_cn_from_name(&cert.tbs_certificate.subject);
-    let issuer = extract_cn_from_name(&cert.tbs_certificate.issuer);
+    let common_name = extract_cn_from_name(cert.tbs_certificate().subject());
+    let issuer = extract_cn_from_name(cert.tbs_certificate().issuer());
 
-    let valid_from = x509_time_to_naive_date(&cert.tbs_certificate.validity.not_before)?;
-    let valid_until = x509_time_to_naive_date(&cert.tbs_certificate.validity.not_after)?;
+    let valid_from = x509_time_to_naive_date(&cert.tbs_certificate().validity().not_before)?;
+    let valid_until = x509_time_to_naive_date(&cert.tbs_certificate().validity().not_after)?;
 
     // Serial number — format as hex string
     let serial_number = cert
-        .tbs_certificate
-        .serial_number
+        .tbs_certificate()
+        .serial_number()
         .as_bytes()
         .iter()
         .map(|b| format!("{b:02X}"))
@@ -129,6 +129,8 @@ pub fn get_certificate_info(
 
 /// Convert PKCS#8 DER bytes to PEM string.
 fn pkcs8_der_to_pem(der: &[u8]) -> Result<String, FiscalError> {
+    pkcs8::PrivateKeyInfoRef::from_der(der)
+        .map_err(|e| FiscalError::Certificate(format!("Invalid PKCS#8 private key: {e}")))?;
     // Manual PEM encoding for PKCS#8 private key
     let b64 = base64::engine::general_purpose::STANDARD.encode(der);
     Ok(format!(
@@ -157,14 +159,10 @@ fn wrap_base64(s: &str) -> String {
 
 /// Extract the Common Name (CN) from an X.500 Name (RDN sequence).
 fn extract_cn_from_name(name: &x509_cert::name::Name) -> String {
-    // In x509-cert 0.2, Name wraps a Vec<RelativeDistinguishedName>
-    for rdn in &name.0 {
-        for attr in rdn.0.as_slice() {
-            if attr.oid.to_string() == "2.5.4.3" {
-                // Try to extract the string value from the attribute value bytes
-                if let Ok(value) = std::str::from_utf8(attr.value.value()) {
-                    return value.to_string();
-                }
+    for attr in name.iter() {
+        if attr.oid.to_string() == "2.5.4.3" {
+            if let Ok(value) = std::str::from_utf8(attr.value.value()) {
+                return value.to_string();
             }
         }
     }
