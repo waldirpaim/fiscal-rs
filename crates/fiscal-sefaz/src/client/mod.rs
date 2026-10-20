@@ -32,6 +32,8 @@ mod events;
 #[cfg(test)]
 mod nfce_tests;
 mod rtc;
+#[cfg(test)]
+mod tls_tests;
 
 use std::fmt;
 use std::time::Duration;
@@ -102,29 +104,77 @@ impl SefazClient {
     ///
     /// Returns [`FiscalError::Network`] if the HTTP client cannot be built.
     pub fn new(pfx_buffer: &[u8], passphrase: &str) -> Result<Self, FiscalError> {
-        // reqwest usa rustls-no-provider (o provider default, aws-lc-rs,
-        // compila C e quebra o cross-compile aarch64 do napi). Instala o
-        // ring como provider do processo; idempotente, erro só significa
-        // que já havia um provider instalado.
-        let _ = rustls::crypto::ring::default_provider().install_default();
+        Self::with_root_certificates(pfx_buffer, passphrase, &[])
+    }
 
-        // Load certificate and private key from PFX using our pure-Rust parser
-        let cert_data = fiscal_crypto::certificate::load_certificate(pfx_buffer, passphrase)?;
+    /// Cria o cliente com CAs adicionais explicitamente confiadas pelo chamador.
+    /// Cada entrada contém um certificado raiz ou bundle em PEM; as raízes do sistema
+    /// continuam ativas. Certificado e hostname do servidor sempre são validados.
+    ///
+    /// No macOS usa TLS nativo (issue upstream #74). Nas demais plataformas usa
+    /// rustls; no Linux, a feature `openssl-tls` permite usar OpenSSL.
+    ///
+    /// # Errors
+    ///
+    /// Retorna [`FiscalError::Certificate`] para identidade/CA inválida e
+    /// [`FiscalError::Network`] se não for possível construir o transporte.
+    pub fn with_root_certificates(
+        pfx_buffer: &[u8],
+        passphrase: &str,
+        roots_pem: &[&[u8]],
+    ) -> Result<Self, FiscalError> {
+        let (cert_data, chain) =
+            fiscal_crypto::certificate::load_certificate_with_chain(pfx_buffer, passphrase)?;
 
-        // Build PEM-based identity (works with both native-tls and rustls)
-        let identity = Identity::from_pem(
-            format!("{}\n{}", cert_data.private_key, cert_data.certificate).as_bytes(),
-        )
-        .map_err(|e| FiscalError::Certificate(format!("Failed to load PFX identity: {e}")))?;
-
-        let http = Client::builder()
-            .use_rustls_tls()
-            .identity(identity)
-            .danger_accept_invalid_certs(true)
+        #[cfg(any(target_os = "macos", all(target_os = "linux", feature = "openssl-tls")))]
+        let builder = {
+            let identity =
+                Identity::from_pkcs8_pem(chain.as_bytes(), cert_data.private_key.as_bytes());
+            let identity = identity
+                .map_err(|e| FiscalError::Certificate(error_details("Invalid TLS identity", e)))?;
+            Client::builder().tls_backend_native().identity(identity)
+        };
+        #[cfg(not(any(target_os = "macos", all(target_os = "linux", feature = "openssl-tls"))))]
+        let builder = {
+            // Mantém o provider ring usado pelos builds portáveis do addon.
+            let _ = rustls::crypto::ring::default_provider().install_default();
+            let identity =
+                Identity::from_pem(format!("{}\n{chain}", cert_data.private_key).as_bytes())
+                    .map_err(|e| {
+                        FiscalError::Certificate(error_details("Invalid TLS identity", e))
+                    })?;
+            Client::builder().tls_backend_rustls().identity(identity)
+        };
+        let mut builder = builder
+            .min_tls_version(reqwest::tls::Version::TLS_1_2)
+            .https_only(true)
+            .redirect(reqwest::redirect::Policy::none())
             .connect_timeout(CONNECT_TIMEOUT)
-            .timeout(REQUEST_TIMEOUT)
+            .timeout(REQUEST_TIMEOUT);
+        for pem in roots_pem {
+            use rustls::pki_types::{CertificateDer, pem::PemObject};
+            let certificates = CertificateDer::pem_slice_iter(pem)
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|e| FiscalError::Certificate(format!("Invalid trusted CA PEM: {e}")))?;
+            if certificates.is_empty() {
+                return Err(FiscalError::Certificate(
+                    "Empty trusted CA PEM bundle".into(),
+                ));
+            }
+            let mut validated = rustls::RootCertStore::empty();
+            for der in certificates {
+                validated.add(der.clone()).map_err(|e| {
+                    FiscalError::Certificate(format!("Invalid trusted CA certificate: {e}"))
+                })?;
+                let certificate = reqwest::Certificate::from_der(der.as_ref()).map_err(|e| {
+                    FiscalError::Certificate(error_details("Invalid trusted CA", e))
+                })?;
+                builder = builder.add_root_certificate(certificate);
+            }
+        }
+        let http = builder
             .build()
-            .map_err(|e| FiscalError::Network(format!("Failed to build HTTP client: {e}")))?;
+            .map_err(|e| network_error("Failed to build SEFAZ HTTP client", e))?;
 
         Ok(Self {
             http,
@@ -275,13 +325,13 @@ impl SefazClient {
             .body(envelope)
             .send()
             .await
-            .map_err(|e| FiscalError::Network(format!("{e}")))?;
+            .map_err(|e| network_error("Failed to send SEFAZ request", e))?;
 
         let status = response.status();
         let body = response
             .text()
             .await
-            .map_err(|e| FiscalError::Network(format!("Failed to read response body: {e}")))?;
+            .map_err(|e| network_error("Failed to read SEFAZ response body", e))?;
 
         if !status.is_success() {
             return Err(FiscalError::Network(format!(
@@ -380,13 +430,13 @@ impl SefazClient {
             .body(envelope)
             .send()
             .await
-            .map_err(|e| FiscalError::Network(format!("{e}")))?;
+            .map_err(|e| network_error("Failed to send SEFAZ request", e))?;
 
         let status = response.status();
         let body = response
             .text()
             .await
-            .map_err(|e| FiscalError::Network(format!("Failed to read response body: {e}")))?;
+            .map_err(|e| network_error("Failed to read SEFAZ response body", e))?;
 
         if !status.is_success() {
             return Err(FiscalError::Network(format!(
@@ -421,13 +471,13 @@ impl SefazClient {
             .body(envelope)
             .send()
             .await
-            .map_err(|e| FiscalError::Network(format!("{e}")))?;
+            .map_err(|e| network_error("Failed to send SEFAZ request", e))?;
 
         let status = response.status();
         let body = response
             .text()
             .await
-            .map_err(|e| FiscalError::Network(format!("Failed to read response body: {e}")))?;
+            .map_err(|e| network_error("Failed to read SEFAZ response body", e))?;
 
         if !status.is_success() {
             return Err(FiscalError::Network(format!(
@@ -472,13 +522,13 @@ impl SefazClient {
             .body(envelope)
             .send()
             .await
-            .map_err(|e| FiscalError::Network(format!("{e}")))?;
+            .map_err(|e| network_error("Failed to send SEFAZ request", e))?;
 
         let status = response.status();
         let body = response
             .text()
             .await
-            .map_err(|e| FiscalError::Network(format!("Failed to read response body: {e}")))?;
+            .map_err(|e| network_error("Failed to read SEFAZ response body", e))?;
 
         if !status.is_success() {
             return Err(FiscalError::Network(format!(
@@ -513,13 +563,13 @@ impl SefazClient {
             .body(envelope)
             .send()
             .await
-            .map_err(|e| FiscalError::Network(format!("{e}")))?;
+            .map_err(|e| network_error("Failed to send SEFAZ request", e))?;
 
         let status = response.status();
         let body = response
             .text()
             .await
-            .map_err(|e| FiscalError::Network(format!("Failed to read response body: {e}")))?;
+            .map_err(|e| network_error("Failed to read SEFAZ response body", e))?;
 
         if !status.is_success() {
             return Err(FiscalError::Network(format!(
@@ -529,6 +579,35 @@ impl SefazClient {
 
         Ok(body)
     }
+}
+
+// Inclui a cadeia de causas (TLS, DNS, timeout), removendo a URL do reqwest
+// antes de formatar. Não inclui XML, chave privada ou senha do certificado.
+fn error_details(context: &str, error: reqwest::Error) -> String {
+    use std::error::Error as _;
+
+    let error = error.without_url();
+    let mut message = format!("{context}: {error}");
+    let mut source = error.source();
+    // Limite defensivo para implementações de Error com cadeias cíclicas.
+    for _ in 0..16 {
+        let Some(cause) = source else { break };
+        message.push_str(": ");
+        message.push_str(&cause.to_string());
+        source = cause.source();
+    }
+    message
+}
+
+fn network_error(context: &str, error: reqwest::Error) -> FiscalError {
+    let category = if error.is_timeout() {
+        "timeout"
+    } else if error.is_connect() {
+        "connection/TLS"
+    } else {
+        "HTTP/transport"
+    };
+    FiscalError::Network(error_details(&format!("{context} ({category})"), error))
 }
 
 #[cfg(test)]

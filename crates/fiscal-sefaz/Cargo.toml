@@ -12,6 +12,8 @@ categories = ["web-programming"]
 [features]
 default = ["client"]
 client = ["dep:reqwest", "dep:rustls"]
+# Backend nativo/OpenSSL opcional no Linux; Windows mantém rustls.
+openssl-tls = ["client", "reqwest/native-tls"]
 
 [dependencies]
 fiscal-core = { path = "../fiscal-core", version = "0.7.3" }
@@ -30,3 +32,7 @@ serde = { version = "1", features = ["derive"] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt"] }
+
+# Restaura no macOS o backend da versão 0.6 (issue upstream #74).
+[target.'cfg(target_os = "macos")'.dependencies]
+reqwest = { version = "0.13", default-features = false, features = ["native-tls"], optional = true }

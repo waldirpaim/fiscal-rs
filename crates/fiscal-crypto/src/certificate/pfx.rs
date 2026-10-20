@@ -66,6 +66,36 @@ pub fn load_certificate(
 ) -> Result<CertificateData, FiscalError> {
     let parsed = pkcs12_parser::pkcs12_parse(pfx_buffer, passphrase)?;
 
+    certificate_data(&parsed, pfx_buffer, passphrase)
+}
+
+/// Carrega a identidade e a cadeia PEM para mTLS, com o certificado do titular
+/// primeiro e os intermediários em ordem de emissão, incluindo autoemitidos.
+/// Raízes RSA autofirmadas verificadas são omitidas; para outros algoritmos,
+/// a preservação é conservadora e pode incluir a raiz. A confiança na cadeia
+/// continua sendo verificada pelo servidor TLS.
+///
+/// O campo `CertificateData::certificate` continua contendo somente o titular,
+/// preservando o contrato usado nas assinaturas XML.
+///
+/// # Errors
+///
+/// Retorna [`FiscalError::Certificate`] se o PFX ou os certificados forem inválidos.
+pub fn load_certificate_with_chain(
+    pfx_buffer: &[u8],
+    passphrase: &str,
+) -> Result<(CertificateData, String), FiscalError> {
+    let parsed = pkcs12_parser::pkcs12_parse(pfx_buffer, passphrase)?;
+    let data = certificate_data(&parsed, pfx_buffer, passphrase)?;
+    let chain = super::chain::build_tls_chain(&parsed, &data.certificate)?;
+    Ok((data, chain))
+}
+
+fn certificate_data(
+    parsed: &pkcs12_parser::ParsedPkcs12,
+    pfx_buffer: &[u8],
+    passphrase: &str,
+) -> Result<CertificateData, FiscalError> {
     // Convert private key DER to PEM using pkcs8 crate
     let private_key_pem = pkcs8_der_to_pem(&parsed.pkey)?;
 
@@ -140,7 +170,7 @@ fn pkcs8_der_to_pem(der: &[u8]) -> Result<String, FiscalError> {
 }
 
 /// Convert X.509 DER bytes to PEM string.
-fn x509_der_to_pem(der: &[u8]) -> Result<String, FiscalError> {
+pub(super) fn x509_der_to_pem(der: &[u8]) -> Result<String, FiscalError> {
     let b64 = base64::engine::general_purpose::STANDARD.encode(der);
     Ok(format!(
         "-----BEGIN CERTIFICATE-----\n{}\n-----END CERTIFICATE-----\n",

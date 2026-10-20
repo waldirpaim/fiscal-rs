@@ -27,6 +27,9 @@ documentation = "https://fiscal-rs-docs.vercel.app/"
 keywords = ["nfe", "nfce", "fiscal", "brazil", "sefaz"]
 categories = ["encoding", "cryptography", "web-programming"]
 
+[features]
+openssl-tls = ["fiscal-sefaz/openssl-tls"]
+
 [dependencies]
 fiscal-core = { path = "crates/fiscal-core", version = "0.7.3" }
 fiscal-crypto = { path = "crates/fiscal-crypto", version = "0.5.0" }
