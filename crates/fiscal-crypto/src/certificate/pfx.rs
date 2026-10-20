@@ -66,6 +66,61 @@ pub fn load_certificate(
 ) -> Result<CertificateData, FiscalError> {
     let parsed = pkcs12_parser::pkcs12_parse(pfx_buffer, passphrase)?;
 
+    certificate_data(&parsed, pfx_buffer, passphrase)
+}
+
+/// Carrega a identidade e a cadeia PEM para mTLS, com o certificado do titular
+/// primeiro e os intermediários em ordem de emissão. Não inclui a raiz nem
+/// certificados sem relação com o titular. A raiz deve ser confiada pelo servidor.
+///
+/// O campo `CertificateData::certificate` continua contendo somente o titular,
+/// preservando o contrato usado nas assinaturas XML.
+///
+/// # Errors
+///
+/// Retorna [`FiscalError::Certificate`] se o PFX ou os certificados forem inválidos.
+pub fn load_certificate_with_chain(
+    pfx_buffer: &[u8],
+    passphrase: &str,
+) -> Result<(CertificateData, String), FiscalError> {
+    let parsed = pkcs12_parser::pkcs12_parse(pfx_buffer, passphrase)?;
+    let data = certificate_data(&parsed, pfx_buffer, passphrase)?;
+    let mut chain = data.certificate.clone();
+    let mut current = x509_cert::Certificate::from_der(&parsed.cert)
+        .map_err(|e| FiscalError::Certificate(format!("Invalid client certificate: {e}")))?;
+    let mut remaining = parsed
+        .ca
+        .iter()
+        .map(|der| {
+            x509_cert::Certificate::from_der(der)
+                .map(|cert| (der, cert))
+                .map_err(|e| FiscalError::Certificate(format!("Invalid CA certificate: {e}")))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+
+    // Os SafeBags do PFX não garantem a ordem da cadeia. Cada certificado é
+    // consumido no máximo uma vez, inclusive se houver ciclos ou duplicatas.
+    while current.tbs_certificate().issuer() != current.tbs_certificate().subject() {
+        let Some(index) = remaining.iter().position(|(_, cert)| {
+            cert.tbs_certificate().subject() == current.tbs_certificate().issuer()
+        }) else {
+            break;
+        };
+        let (der, issuer) = remaining.remove(index);
+        if issuer.tbs_certificate().subject() == issuer.tbs_certificate().issuer() {
+            break;
+        }
+        chain.push_str(&x509_der_to_pem(der)?);
+        current = issuer;
+    }
+    Ok((data, chain))
+}
+
+fn certificate_data(
+    parsed: &pkcs12_parser::ParsedPkcs12,
+    pfx_buffer: &[u8],
+    passphrase: &str,
+) -> Result<CertificateData, FiscalError> {
     // Convert private key DER to PEM using pkcs8 crate
     let private_key_pem = pkcs8_der_to_pem(&parsed.pkey)?;
 

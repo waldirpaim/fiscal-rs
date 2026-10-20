@@ -12,6 +12,9 @@ publish = false
 [lib]
 crate-type = ["cdylib"]
 
+[features]
+openssl-tls = ["fiscal-sefaz/openssl-tls"]
+
 [dependencies]
 fiscal-core = { path = "../fiscal-core", version = "0.7.3" }
 fiscal-crypto = { path = "../fiscal-crypto", version = "0.5.0" }

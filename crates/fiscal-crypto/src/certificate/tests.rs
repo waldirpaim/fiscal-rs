@@ -24,6 +24,22 @@ fn test_pfx_cpf() -> Vec<u8> {
 
 const PASSWORD: &str = "minhasenha";
 
+#[test]
+fn tls_chain_keeps_leaf_contract_and_orders_intermediates() {
+    let pfx = include_bytes!("../../../../tests/fixtures/tls/client-with-chain.pfx");
+    let (data, chain) = load_certificate_with_chain(pfx, "test-only").unwrap();
+    let leaf = include_str!("../../../../tests/fixtures/tls/client.pem");
+    let intermediate = include_str!("../../../../tests/fixtures/tls/intermediate.pem");
+    assert_eq!(data.certificate, leaf);
+    assert_eq!(chain, format!("{leaf}{intermediate}"));
+    assert_eq!(
+        load_certificate(pfx, "test-only").unwrap().certificate,
+        leaf
+    );
+    // A assinatura XML não deve embutir a cadeia mTLS inteira como certificado.
+    assert_eq!(data.certificate.matches("BEGIN CERTIFICATE").count(), 1);
+}
+
 // ── ensure_modern_pfx ─────────────────────────────────────────
 
 #[test]

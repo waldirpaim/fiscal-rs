@@ -9,6 +9,24 @@
 //! - [`client`] — async SEFAZ client with mTLS authentication (feature-gated).
 //!
 //! The [`status_codes`] module from `fiscal-core` is re-exported for convenience.
+//!
+//! ## Transporte TLS
+//!
+//! O cliente exige HTTPS e TLS 1.2 ou superior, valida o certificado e o hostname
+//! do servidor e transmite os intermediários do PFX no mTLS. Redirecionamentos
+//! não são seguidos: o XML fiscal só é enviado ao endpoint solicitado.
+//!
+//! No macOS, o backend é o TLS nativo, como na versão 0.6 (issue upstream #74).
+//! Nas demais plataformas, rustls continua sendo o padrão. No Linux, a feature
+//! `openssl-tls` permite selecionar OpenSSL e requer seus arquivos de desenvolvimento.
+//! No Windows, rustls permanece ativo inclusive nos builds com todas as features,
+//! para preservar o envio dos intermediários sem depender do repositório de CAs
+//! do Schannel.
+//!
+//! As CAs do sistema são usadas por padrão. CAs privadas ou adicionais podem ser
+//! fornecidas por [`client::SefazClient::with_root_certificates`] (feature `client`),
+//! sem desativar a validação do servidor. A cadeia do cliente no PFX não é
+//! automaticamente considerada confiável para autenticar o servidor.
 
 /// XML request builders for SEFAZ web services.
 pub mod request_builders;
