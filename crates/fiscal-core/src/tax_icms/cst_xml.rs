@@ -7,13 +7,13 @@ use super::cst::IcmsCst;
 use super::totals::IcmsTotals;
 use super::{accum, accum_raw, fc2, fc4, fc4_raw};
 
-/// Build the ICMS XML fragment and accumulate totals from a typed [`IcmsCst`]
+/// Build the ICMS XML fragment and accumulate totals from a typed [`IcmsCst`](crate::tax_icms::IcmsCst)
 /// variant.
 ///
 /// This is the compile-time-safe counterpart of the original
-/// [`build_icms_xml`] code path for normal-regime CSTs. It can be used
+/// [`build_icms_xml`](crate::tax_icms::build_icms_xml) code path for normal-regime CSTs. It can be used
 /// directly by new code that already has an `IcmsCst`, or indirectly via the
-/// unchanged [`build_icms_xml`] public API (which converts internally).
+/// unchanged [`build_icms_xml`](crate::tax_icms::build_icms_xml) public API (which converts internally).
 ///
 /// # Errors
 ///

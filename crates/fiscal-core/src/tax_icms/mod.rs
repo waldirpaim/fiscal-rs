@@ -1,18 +1,18 @@
 //! ICMS tax computation and XML generation for NF-e / NFC-e documents.
 //!
 //! This module provides two main enum types:
-//! - [`IcmsCst`] — for normal tax regime (Lucro Real / Lucro Presumido), covering
+//! - [`IcmsCst`](crate::tax_icms::IcmsCst) — for normal tax regime (Lucro Real / Lucro Presumido), covering
 //!   CSTs 00, 02, 10, 15, 20, 30, 40, 41, 50, 51, 53, 60, 61, 70, and 90.
-//! - [`IcmsCsosn`] — for Simples Nacional regime (CRT 1/2), covering CSOSNs
+//! - [`IcmsCsosn`](crate::tax_icms::IcmsCsosn) — for Simples Nacional regime (CRT 1/2), covering CSOSNs
 //!   101, 102, 103, 201, 202, 203, 300, 400, 500, and 900.
 //!
-//! Both are wrapped by the [`IcmsVariant`] enum, which is consumed by
-//! [`build_icms_cst_xml`] / [`build_icms_csosn_xml`] to produce the `<ICMS>`
-//! XML fragment and accumulate [`IcmsTotals`].
+//! Both are wrapped by the [`IcmsVariant`](crate::tax_icms::IcmsVariant) enum, which is consumed by
+//! [`build_icms_cst_xml`](crate::tax_icms::build_icms_cst_xml) / [`build_icms_csosn_xml`](crate::tax_icms::build_icms_csosn_xml) to produce the `<ICMS>`
+//! XML fragment and accumulate [`IcmsTotals`](crate::tax_icms::IcmsTotals).
 //!
 //! There are also three auxiliary data structs for special ICMS groups:
-//! [`IcmsPartData`] (partition), [`IcmsStData`] (ST repasse), and
-//! [`IcmsUfDestData`] (interstate destination differential).
+//! [`IcmsPartData`](crate::tax_icms::IcmsPartData) (partition), [`IcmsStData`](crate::tax_icms::IcmsStData) (ST repasse), and
+//! [`IcmsUfDestData`](crate::tax_icms::IcmsUfDestData) (interstate destination differential).
 
 mod builders;
 mod csosn;

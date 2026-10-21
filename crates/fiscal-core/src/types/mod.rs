@@ -10,14 +10,14 @@
 //!
 //! | Type | Purpose |
 //! |------|---------|
-//! | [`IssuerData`] | Company/issuer identification and address |
-//! | [`RecipientData`] | Buyer/recipient identification (optional for NFC-e under R$200) |
-//! | [`InvoiceItemData`] | Line-item with product data and all applicable taxes |
-//! | [`PaymentData`] | Payment method and amount |
-//! | [`SefazEnvironment`] | Production vs. homologation environment selector |
-//! | [`InvoiceModel`] | NF-e (55) vs. NFC-e (65) |
-//! | [`EmissionType`] | Normal vs. contingency emission type |
-//! | [`TaxRegime`] | Simples Nacional / Simples Excess / Normal regime |
+//! | [`IssuerData`](crate::types::IssuerData) | Company/issuer identification and address |
+//! | [`RecipientData`](crate::types::RecipientData) | Buyer/recipient identification (optional for NFC-e under R$200) |
+//! | [`InvoiceItemData`](crate::types::InvoiceItemData) | Line-item with product data and all applicable taxes |
+//! | [`PaymentData`](crate::types::PaymentData) | Payment method and amount |
+//! | [`SefazEnvironment`](crate::types::SefazEnvironment) | Production vs. homologation environment selector |
+//! | [`InvoiceModel`](crate::types::InvoiceModel) | NF-e (55) vs. NFC-e (65) |
+//! | [`EmissionType`](crate::types::EmissionType) | Normal vs. contingency emission type |
+//! | [`TaxRegime`](crate::types::TaxRegime) | Simples Nacional / Simples Excess / Normal regime |
 
 mod additional;
 mod billing;

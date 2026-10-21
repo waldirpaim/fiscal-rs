@@ -340,7 +340,7 @@ fn collapse_whitespace(s: &str) -> String {
 ///
 /// # Errors
 ///
-/// Returns [`FiscalError::XmlParsing`] with a description of all missing tags.
+/// Returns [`FiscalError::XmlParsing`](crate::FiscalError::XmlParsing) with a description of all missing tags.
 ///
 /// # Examples
 ///

@@ -1,7 +1,7 @@
 //! Compile-time constants used throughout NF-e XML generation.
 //!
 //! Includes namespace URIs, algorithm identifiers, version strings, and the
-//! [`payment_types`] submodule with `tPag` payment type codes.
+//! [`payment_types`](crate::constants::payment_types) submodule with `tPag` payment type codes.
 
 /// NF-e XML namespace (`xmlns`).
 pub const NFE_NAMESPACE: &str = "http://www.portalfiscal.inf.br/nfe";

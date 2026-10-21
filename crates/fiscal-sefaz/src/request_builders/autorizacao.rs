@@ -63,7 +63,7 @@ pub fn build_autorizacao_request(xml: &str, lot_id: &str, sync: bool, _compresse
 ///
 /// # Errors
 ///
-/// Returns [`FiscalError::InvalidTaxData`] if:
+/// Returns [`FiscalError::InvalidTaxData`](fiscal_core::FiscalError::InvalidTaxData) if:
 /// - `xmls` is empty
 /// - `xmls` has more than 50 documents
 /// - `ind_sinc` is `1` but `xmls` has more than 1 document
