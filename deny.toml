@@ -31,6 +31,12 @@ allow = [
     # CDLA-Permissive-2.0 is used by webpki-root-certs (CA root certificates)
     "CDLA-Permissive-2.0",
 ]
+# Crates that are not covered by the allow list above.
+exceptions = [
+    # fiscal-danfe translates the DANFE layout of the ACBr project and therefore carries its
+    # license (LGPL-2.1-or-later), unlike the MIT crates of this workspace. See its NOTICE.md.
+    { allow = ["LGPL-2.1-or-later"], crate = "fiscal-danfe" },
+]
 # Minimum confidence threshold for license detection. A score below this
 # causes cargo-deny to treat the detection as uncertain and emit a warning.
 confidence-threshold = 0.8
