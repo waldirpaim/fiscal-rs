@@ -1,0 +1,19 @@
+[package]
+name = "fiscal-danfe"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "DANFE (NF-e) PDF rendering from the authorised XML — Rust translation of the ACBr FPDF DANFE layout"
+# Derived from ACBr (LGPL-2.1-or-later); this crate is NOT MIT, unlike the rest of the workspace.
+license = "LGPL-2.1-or-later"
+repository = "https://github.com/JoaoHenriqueBarbosa/fiscal-rs"
+readme = "README.md"
+keywords = ["danfe", "nfe", "pdf", "fiscal", "brazil"]
+categories = ["encoding", "graphics"]
+
+[dependencies]
+fiscal-pdf = { path = "../fiscal-pdf", version = "0.1.0" }
+quick-xml = "0.41"
+thiserror = "2"
+
+[dev-dependencies]
