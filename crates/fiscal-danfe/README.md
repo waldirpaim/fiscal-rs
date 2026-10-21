@@ -15,6 +15,25 @@ std::fs::write("danfe.pdf", pdf)?;
 The input is an `nfeProc` (NF-e with the authorisation protocol) or a bare `NFe`; the model in
 the access key (`mod`) picks the layout. Use [`render_danfe_bytes`] for files in Windows-1252.
 
+## Command line
+
+The `fiscal-danfe` executable does the same from a shell, or from a program that prefers not
+to link this crate (see the license below): it reads the XML from a file or from the standard
+input and writes the PDF to the standard output or to `--saida`.
+
+```text
+fiscal-danfe [options] [nota.xml] > danfe.pdf
+fiscal-danfe --help
+```
+
+It applies defaults per model (3 mm margins for the NF-e, 1 mm and the trade name for the
+NFC-e). `--protocolo-numero` (with `--protocolo-data`, `--protocolo-status`,
+`--protocolo-digest` and `--protocolo-motivo`) fills the authorisation protocol of an XML that
+lacks one — an offline NFC-e saved before transmission — and then treats the note as a normal
+emission, so the DANFE is not stamped "pending authorisation". Exit codes: 0 success, 2 usage,
+3 input (file, logo, 10 MiB limit), 4 invalid XML, 5 rendering or output; messages go to the
+standard error and never repeat the XML.
+
 ## License
 
 **LGPL-2.1-or-later** — this crate is a Rust translation of the DANFE layout of the
