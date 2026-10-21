@@ -220,3 +220,25 @@ fn output_is_valid_pdf_structure() {
     assert!(pdf.starts_with(b"%PDF-1."));
     assert!(pdf.ends_with(b"%%EOF\n"));
 }
+
+#[test]
+fn left_stub_widths_round_half_to_even_like_the_original() {
+    // With the stub on the left the band is 185 mm wide and the phone box of the recipient is
+    // `RoundTo((185 - 87 - 29 - 8) / 2, 0)` = `RoundTo(30.5, 0)`: 30 mm in the original (half to
+    // even), which puts the end of that box at x = 414.43 pt. Rounding half away from zero made
+    // it 31 mm (417.26 pt). Checked against the real ACBr (tests/acbr).
+    let options = DanfeOptions {
+        pos_canhoto: fiscal_danfe::options::PosCanhoto::Esquerda,
+        margem_esquerda: 2.0,
+        margem_superior: 2.0,
+        margem_direita: 2.0,
+        margem_inferior: 2.0,
+        ..options()
+    };
+    let pdf = render(XML, &options);
+    assert!(
+        pdf.contains("414.43 654.80 l"),
+        "phone box of the recipient"
+    );
+    assert!(!pdf.contains("417.26 654.80 l"));
+}

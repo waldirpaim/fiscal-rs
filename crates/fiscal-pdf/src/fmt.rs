@@ -114,17 +114,13 @@ pub(crate) fn float_to_str(v: f64) -> String {
     out
 }
 
-/// Delphi `RoundTo(value, digit)`: rounds half away from zero to `10^digit`
-/// (`digit` is `0` for integers, `-2` for hundredths).
+/// Delphi `RoundTo(value, digit)`: rounds to `10^digit` with `Round`, that is, half to even
+/// (`digit` is `0` for integers, `-2` for hundredths). The ACBr compiled with Free Pascal and
+/// the compatibility `RoundTo` of the ACBr itself (`Round(AValue / LFactor) * LFactor`) do the
+/// same: `RoundTo(30.5, 0)` is `30`.
 pub fn round_to(value: f64, digit: i32) -> f64 {
     let factor = 10f64.powi(digit);
-    let scaled = value / factor;
-    let rounded = if value < 0.0 {
-        (scaled - 0.5).trunc()
-    } else {
-        (scaled + 0.5).trunc()
-    };
-    rounded * factor
+    (value / factor).round_ties_even() * factor
 }
 
 #[cfg(test)]
@@ -153,12 +149,19 @@ mod tests {
     }
 
     #[test]
-    fn round_to_rounds_half_away_from_zero() {
-        assert_eq!(round_to(2.5, 0), 3.0);
-        assert_eq!(round_to(-2.5, 0), -3.0);
+    fn round_to_rounds_half_to_even_like_delphi() {
+        // Half to even, as `Round` does: 30.5 is 30 (the destinatário of the DANFE depends on it).
+        assert_eq!(round_to(30.5, 0), 30.0);
+        assert_eq!(round_to(31.5, 0), 32.0);
+        assert_eq!(round_to(2.5, 0), 2.0);
+        assert_eq!(round_to(3.5, 0), 4.0);
+        assert_eq!(round_to(0.5, 0), 0.0);
+        assert_eq!(round_to(-2.5, 0), -2.0);
+        assert_eq!(round_to(-3.5, 0), -4.0);
         assert_eq!(round_to(84.46, 0), 84.0);
-        assert!((round_to(1.005 + 0.0001, -2) - 1.01).abs() < 1e-9);
+        assert_eq!(round_to(84.5001, 0), 85.0);
         assert!((round_to(12.3449, -2) - 12.34).abs() < 1e-9);
+        assert!((round_to(12.346, -2) - 12.35).abs() < 1e-9);
     }
 
     #[test]
