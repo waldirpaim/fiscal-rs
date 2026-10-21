@@ -23,6 +23,7 @@ input and writes the PDF to the standard output or to `--saida`.
 
 ```text
 fiscal-danfe [options] [nota.xml] > danfe.pdf
+fiscal-danfe --evento procEventoNFe.xml [options] nota.xml > evento.pdf
 fiscal-danfe --help
 ```
 
@@ -56,7 +57,11 @@ engine it builds on, [`fiscal-pdf`](../fiscal-pdf), stays MIT.
   firearms, fuel, traceability; additional information (referenced documents, notes, payments,
   contingency text, SUFRAMA).
 
-Not ported: the DANFE of events (cancellation, correction letter) and of voided number ranges.
+* **Event DANFE** (`render_evento`, `render_evento_xml`, `Evento::from_xml`): the correction letter
+  (CC-e) and the cancellation, and the header, invoice, event, issuer and recipient blocks of any
+  other event type, from a `procEventoNFe` together with the XML of its invoice.
+
+Not ported: the DANFE of voided number ranges (the FPDF layouts of ACBr do not print it).
 
 ## Differences from ACBr
 

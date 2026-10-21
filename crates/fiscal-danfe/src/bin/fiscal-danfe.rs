@@ -18,7 +18,7 @@ use std::process::ExitCode;
 
 use fiscal_danfe::model::{DateTime, TpEmis};
 use fiscal_danfe::options::PosCanhoto;
-use fiscal_danfe::{DanfeError, DanfeOptions, Nfe, render_nfe};
+use fiscal_danfe::{DanfeError, DanfeOptions, Evento, Nfe, render_evento, render_nfe};
 
 /// Maior XML aceito (o mesmo limite de 10 MiB do servidor).
 const MAX_XML_BYTES: u64 = 10 * 1024 * 1024;
@@ -32,8 +32,13 @@ Lê o XML autorizado (nfeProc ou NFe) do arquivo, ou da entrada padrão quando n
 arquivo ou ele é `-`, e escreve o PDF do DANFE (modelo 55) ou do DANFCE (modelo 65) na
 saída padrão.
 
+Com --evento, o XML lido é o da nota e o PDF sai com o DANFE do evento (carta de correção,
+cancelamento...): ARQUIVO é o `procEventoNFe`. Só valem então --saida, --sistema e
+--sem-compressao.
+
 Opções:
   --saida ARQUIVO          grava o PDF em ARQUIVO em vez da saída padrão
+  --evento ARQUIVO         imprime o evento (`procEventoNFe`) da nota lida
   --sistema TEXTO          texto do rodapé (até três partes separadas por `|`)
   --margem MM              as quatro margens, em mm (padrão: 3 na NF-e e 1 na NFC-e)
   --largura-bobina MM      largura da bobina da NFC-e (padrão: 80)
@@ -68,6 +73,7 @@ struct Protocolo {
 #[derive(Default)]
 struct Args {
     entrada: Option<String>,
+    evento: Option<String>,
     saida: Option<String>,
     sistema: Option<String>,
     margem: Option<f64>,
@@ -122,9 +128,28 @@ fn run(args: impl Iterator<Item = String>) -> Result<(), Falha> {
     })?;
     drop(xml);
 
-    completar_protocolo(&mut nfe, &args.protocolo)?;
-    let options = options(&args, nfe.ide.modelo)?;
-    let pdf = render_nfe(nfe, &options).map_err(|error| Falha::new(5, error.to_string()))?;
+    let pdf = match &args.evento {
+        Some(path) => {
+            if args.protocolo.numero.is_some() || args.protocolo.data.is_some() {
+                return Err(Falha::uso("--protocolo-* não vale com --evento"));
+            }
+            let evento = read_file(path, "o evento")?;
+            let evento = Evento::from_xml_bytes(&evento)
+                .map_err(|error| Falha::new(4, format!("evento: {error}")))?;
+            let options = DanfeOptions {
+                sistema: args.sistema.clone().unwrap_or_default(),
+                comprimir_pdf: !args.sem_compressao,
+                ..DanfeOptions::default()
+            };
+            render_evento(nfe, evento, &options)
+        }
+        None => {
+            completar_protocolo(&mut nfe, &args.protocolo)?;
+            let options = options(&args, nfe.ide.modelo)?;
+            render_nfe(nfe, &options)
+        }
+    }
+    .map_err(|error| Falha::new(5, error.to_string()))?;
 
     match args.saida {
         Some(path) => std::fs::write(&path, &pdf)
@@ -152,6 +177,7 @@ fn parse(mut args: impl Iterator<Item = String>) -> Result<Option<Args>, Falha> 
         match arg.as_str() {
             "-h" | "--help" => return Ok(None),
             "--saida" => out.saida = Some(value("--saida")?),
+            "--evento" => out.evento = Some(value("--evento")?),
             "--sistema" => out.sistema = Some(value("--sistema")?),
             "--margem" => {
                 let text = value("--margem")?;
@@ -216,6 +242,18 @@ fn read_input(path: Option<&str>) -> Result<Vec<u8>, Falha> {
     read.map_err(|error| Falha::new(3, format!("não foi possível ler o XML: {error}")))?;
     if bytes.len() as u64 > MAX_XML_BYTES {
         return Err(Falha::new(3, "o XML excede o limite de 10 MiB"));
+    }
+    Ok(bytes)
+}
+
+/// O arquivo inteiro, com o limite de tamanho do XML.
+fn read_file(path: &str, what: &str) -> Result<Vec<u8>, Falha> {
+    let mut bytes = Vec::new();
+    File::open(path)
+        .and_then(|file| file.take(MAX_XML_BYTES + 1).read_to_end(&mut bytes))
+        .map_err(|error| Falha::new(3, format!("não foi possível ler {what} {path}: {error}")))?;
+    if bytes.len() as u64 > MAX_XML_BYTES {
+        return Err(Falha::new(3, format!("{what} excede o limite de 10 MiB")));
     }
     Ok(bytes)
 }

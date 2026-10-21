@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<procEventoNFe versao="1.00" xmlns="http://www.portalfiscal.inf.br/nfe">
+<evento versao="1.00"><infEvento Id="ID1101113526071122233300018155001000001234112345678001"><cOrgao>35</cOrgao><tpAmb>2</tpAmb><CNPJ>11222333000181</CNPJ><chNFe>35260711222333000181550010000012341123456780</chNFe><dhEvento>2026-07-21T10:02:11-03:00</dhEvento><tpEvento>110111</tpEvento><nSeqEvento>1</nSeqEvento><verEvento>1.00</verEvento><detEvento versao="1.00"><descEvento>Cancelamento</descEvento><nProt>135260000012345</nProt><xJust>Erro na digitacao da quantidade dos itens; mercadoria nao saiu do estabelecimento.</xJust></detEvento></infEvento></evento>
+<retEvento versao="1.00"><infEvento><tpAmb>2</tpAmb><verAplic>SP_EVENTOS_PL_100</verAplic><cOrgao>35</cOrgao><cStat>135</cStat><xMotivo>Evento registrado e vinculado a NF-e</xMotivo><chNFe>35260711222333000181550010000012341123456780</chNFe><tpEvento>110111</tpEvento><xEvento>Cancelamento registrado</xEvento><nSeqEvento>1</nSeqEvento><dhRegEvento>2026-07-21T10:02:20-03:00</dhRegEvento><nProt>135260000098766</nProt></infEvento></retEvento>
+</procEventoNFe>
