@@ -599,7 +599,7 @@ impl Nfe {
 }
 
 /// Windows-1252 byte to character.
-fn cp1252_to_char(b: u8) -> char {
+pub(crate) fn cp1252_to_char(b: u8) -> char {
     const HIGH: [char; 32] = [
         '€', '\u{81}', '‚', 'ƒ', '„', '…', '†', '‡', 'ˆ', '‰', 'Š', '‹', 'Œ', '\u{8d}', 'Ž',
         '\u{8f}', '\u{90}', '‘', '’', '“', '”', '•', '–', '—', '˜', '™', 'š', '›', 'œ', '\u{9d}',

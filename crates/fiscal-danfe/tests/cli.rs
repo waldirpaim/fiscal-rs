@@ -7,6 +7,7 @@ use std::process::{Command, Output, Stdio};
 
 const NFE: &str = include_str!("fixtures/nfe_55.xml");
 const NFCE: &str = include_str!("fixtures/nfce_65.xml");
+const CCE: &str = include_str!("fixtures/evento_cce.xml");
 
 fn exe() -> Command {
     Command::new(env!("CARGO_BIN_EXE_fiscal-danfe"))
@@ -226,4 +227,45 @@ fn help_prints_the_usage() {
     assert!(help.starts_with("Uso: fiscal-danfe"));
     assert!(help.contains("--protocolo-numero"));
     assert!(help.contains("--sem-compressao"));
+}
+
+#[test]
+fn event_danfe_from_the_event_file() {
+    let evento = temp_file("cce.xml", CCE.as_bytes());
+    let evento = evento.to_str().expect("path");
+    let out = run(&["--sem-compressao", "--evento", evento], NFE.as_bytes());
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let pdf = text(&out.stdout);
+    assert!(pdf.starts_with("%PDF-"));
+    assert!(pdf.contains("Carta de Correcao"));
+    assert!(pdf.contains("135260000098765"));
+}
+
+#[test]
+fn event_errors_use_their_own_codes() {
+    let evento = temp_file("cce-ok.xml", CCE.as_bytes());
+    let evento = evento.to_str().expect("path");
+    let out = run(
+        &["--evento", evento, "--protocolo-numero", "1"],
+        NFE.as_bytes(),
+    );
+    assert_eq!(out.status.code(), Some(2));
+
+    let out = run(&["--evento", "/nao/existe/evento.xml"], NFE.as_bytes());
+    assert_eq!(out.status.code(), Some(3));
+
+    let invalid = temp_file(
+        "evento-ruim.xml",
+        b"<procEventoNFe><evento/></procEventoNFe>",
+    );
+    let out = run(
+        &["--evento", invalid.to_str().expect("path")],
+        NFE.as_bytes(),
+    );
+    assert_eq!(out.status.code(), Some(4));
+    assert!(String::from_utf8_lossy(&out.stderr).starts_with("fiscal-danfe: evento: "));
 }
