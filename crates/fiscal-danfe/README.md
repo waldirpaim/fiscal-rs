@@ -70,6 +70,10 @@ Not ported: the DANFE of voided number ranges (the FPDF layouts of ACBr do not p
 * Errors are returned, not raised; the layout never loops forever on a band that cannot fit.
 * On the NFC-e, the 5 mm taken by a logo is reserved in the first pass too, so the receipt is
   tall enough (the original clips the bottom of receipts with a logo).
+* An NFC-e without `infNFeSupl` (offline, saved before the QR Code was built) gets no QR Code;
+  the original divides by zero.
+* The event DANFE also prints for an NFC-e, and leaves the registration date blank when the
+  XML has no `retEvento` (the original prints `30/12/1899`).
 * `PosCanhoto::Nenhum` hides the receipt stub, which the original cannot do.
 * Fixes inherited from [`fiscal-pdf`](../fiscal-pdf) (see its README).
 
@@ -77,3 +81,6 @@ Not ported: the DANFE of voided number ranges (the FPDF layouts of ACBr do not p
 
 `tests/fixtures` holds synthetic documents (invented companies, valid access keys). Do not add
 real customer XML there.
+
+`tests/acbr` compares the output with the real ACBr, compiled with Free Pascal, case by case and
+byte by byte (150 cases, 143 identical, 7 known differences, none unexplained): see its README.
