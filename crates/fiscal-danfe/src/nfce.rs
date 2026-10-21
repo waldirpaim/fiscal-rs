@@ -488,6 +488,12 @@ fn bloco_qrcode(c: &Ctx, width: f64, pdf: &mut ReportPdf<'_>, y: f64) {
     } else {
         w / 2.0 - qr_size / 2.0
     };
+    // Without `infNFeSupl` (an offline NFC-e saved before its QR Code was built) the original
+    // divides by zero (an exception under Free Pascal) and draws nothing sensible: no QR Code
+    // here, and the space stays.
+    if c.nfe().inf_nfe_supl.qr_code.trim().is_empty() {
+        return;
+    }
     pdf.set_fill_color(Color::Rgb(0, 0, 0));
     pdf.qr_code_sized(
         qr_x,
