@@ -1,7 +1,7 @@
 //! IS (Imposto Seletivo) XML generation for NF-e items — PL_010 tax reform.
 //!
 //! The IS (Imposto Seletivo) is a new consumption tax introduced by Brazil's
-//! 2024 tax reform. This module provides [`IsData`] and [`build_is_xml`] to
+//! 2024 tax reform. This module provides [`IsData`](crate::tax_is::IsData) and [`build_is_xml`](crate::tax_is::build_is_xml) to
 //! generate the `<IS>` element placed inside `<imposto>`.
 
 use serde::{Deserialize, Serialize};

@@ -3,14 +3,21 @@
 //! This module provides two layers of validation mirroring the PHP `sped-nfe`
 //! library:
 //!
-//! - **Pre-send validation** ([`validate_nfe_xml`]) — structural checks on an
+//! - **Pre-send validation** ([`validate_nfe_xml`](crate::validate::validate_nfe_xml)) — structural checks on an
 //!   NF-e XML before it is submitted to SEFAZ.  Equivalent to the PHP
 //!   `Validator::isValid()` / `Tools::isValid()` which validates against XSD
 //!   schemas. Since shipping full XSD files is impractical in a Rust library,
 //!   this performs comprehensive structural validation: well-formedness, correct
 //!   root element, namespaces, required fields, and access key format.
 //!
-//! - **Post-authorization validation** ([`SefazClient::sefaz_validate`]) —
+#![cfg_attr(
+    feature = "client",
+    doc = "- **Post-authorization validation** ([`SefazClient::sefaz_validate`](crate::client::SefazClient::sefaz_validate)) —"
+)]
+#![cfg_attr(
+    not(feature = "client"),
+    doc = "- **Post-authorization validation** (`SefazClient::sefaz_validate` (feature `client`)) —"
+)]
 //!   queries SEFAZ by access key and verifies that the local protocol number,
 //!   digest value, and access key match the SEFAZ records.  Equivalent to the
 //!   PHP `Tools::sefazValidate()`.
@@ -323,7 +330,14 @@ pub fn extract_nfe_validation_data(nfe_xml: &str) -> Result<(String, String, Str
 ///
 /// This is the offline comparison portion of the PHP `sefazValidate()`
 /// method. Call [`extract_nfe_validation_data`] to get the local values,
-/// then use [`SefazClient::consult`](crate::client::SefazClient::consult)
+#[cfg_attr(
+    feature = "client",
+    doc = "then use [`SefazClient::consult`](crate::client::SefazClient::consult)"
+)]
+#[cfg_attr(
+    not(feature = "client"),
+    doc = "then use `SefazClient::consult` (feature `client`)"
+)]
 /// to query SEFAZ, and finally pass both to this function.
 ///
 /// The validation checks three conditions (all must match for `is_valid`

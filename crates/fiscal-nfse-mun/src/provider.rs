@@ -1,7 +1,14 @@
 //! Interface padrão de provedor municipal.
 //!
 //! A ideia: o **modelo comum** ([`crate::model`]) é único; cada município pluga
-//! a diferença implementando [`MunicipalProvider`]. A orquestração de transporte
+#![cfg_attr(
+    feature = "client",
+    doc = "a diferença implementando [`MunicipalProvider`]. A orquestração de transporte"
+)]
+#![cfg_attr(
+    not(feature = "client"),
+    doc = "a diferença implementando `MunicipalProvider` (feature `client`). A orquestração de transporte"
+)]
 //! (SOAP/REST + mTLS) fica em cada provedor porque varia muito (ABRASF é SOAP,
 //! SpeedGov/Santana é REST com layout nacional, SP é SOAP próprio).
 

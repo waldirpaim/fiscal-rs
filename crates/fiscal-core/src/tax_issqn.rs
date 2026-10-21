@@ -1,10 +1,10 @@
 //! ISSQN (ISS — Imposto Sobre Serviços) XML generation for NF-e service items.
 //!
 //! Public entry points:
-//! - [`build_issqn_xml`] — generate `<ISSQN>` element without total accumulation.
-//! - [`build_issqn_xml_with_totals`] — generate `<ISSQN>` element and accumulate into [`IssqnTotals`].
-//! - [`build_imposto_devol`] — generate `<impostoDevol>` element for return invoices.
-//! - [`create_issqn_totals`] — create a zeroed [`IssqnTotals`] accumulator.
+//! - [`build_issqn_xml`](crate::tax_issqn::build_issqn_xml) — generate `<ISSQN>` element without total accumulation.
+//! - [`build_issqn_xml_with_totals`](crate::tax_issqn::build_issqn_xml_with_totals) — generate `<ISSQN>` element and accumulate into [`IssqnTotals`](crate::tax_issqn::IssqnTotals).
+//! - [`build_imposto_devol`](crate::tax_issqn::build_imposto_devol) — generate `<impostoDevol>` element for return invoices.
+//! - [`create_issqn_totals`](crate::tax_issqn::create_issqn_totals) — create a zeroed [`IssqnTotals`](crate::tax_issqn::IssqnTotals) accumulator.
 
 use serde::{Deserialize, Serialize};
 

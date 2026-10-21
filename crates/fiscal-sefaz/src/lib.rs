@@ -6,7 +6,14 @@
 //! - [`request_builders`] — XML request builders for authorization, cancellation, events, etc.
 //! - [`response_parsers`] — SEFAZ XML response parsing and typed result structs.
 //! - [`services`] — SOAP metadata (method, operation, version) for each web service.
-//! - [`client`] — async SEFAZ client with mTLS authentication (feature-gated).
+#![cfg_attr(
+    feature = "client",
+    doc = "- [`client`] — async SEFAZ client with mTLS authentication (feature-gated)."
+)]
+#![cfg_attr(
+    not(feature = "client"),
+    doc = "- `client` (feature `client`) — async SEFAZ client with mTLS authentication (feature-gated)."
+)]
 //!
 //! The [`status_codes`] module from `fiscal-core` is re-exported for convenience.
 //!
@@ -24,7 +31,14 @@
 //! do Schannel.
 //!
 //! As CAs do sistema são usadas por padrão. CAs privadas ou adicionais podem ser
-//! fornecidas por [`client::SefazClient::with_root_certificates`] (feature `client`),
+#![cfg_attr(
+    feature = "client",
+    doc = "fornecidas por [`client::SefazClient::with_root_certificates`] (feature `client`),"
+)]
+#![cfg_attr(
+    not(feature = "client"),
+    doc = "fornecidas por `client::SefazClient::with_root_certificates` (feature `client`),"
+)]
 //! sem desativar a validação do servidor. A cadeia do cliente no PFX não é
 //! automaticamente considerada confiável para autenticar o servidor.
 

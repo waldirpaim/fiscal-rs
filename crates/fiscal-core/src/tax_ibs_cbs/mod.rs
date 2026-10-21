@@ -4,17 +4,17 @@
 //! This module provides all the data types and XML builders corresponding to
 //! the PHP `TraitTagDetIBSCBS` methods:
 //!
-//! - [`IbsCbsData`] / [`build_ibs_cbs_xml`] -- `<IBSCBS>` element inside `<imposto>`
-//! - Sub-groups: [`GIbsCbsData`], [`GIbsUfData`], [`GIbsMunData`], [`GCbsData`]
-//! - [`GDifData`], [`GDevTribData`], [`GRedData`] -- optional sub-sub-groups
-//! - [`GTribRegularData`] -- tributacao regular
-//! - [`GTribCompraGovData`] -- compra governamental
-//! - [`GIbsCbsMonoData`] -- monofasico (combustiveis)
-//! - [`GTransfCredData`] -- transferencia de credito
-//! - [`GCredPresIbsZfmData`] -- credito presumido ZFM
-//! - [`GAjusteCompetData`] -- ajuste de competencia
-//! - [`GEstornoCredData`] -- estorno de credito
-//! - [`GCredPresOperData`] -- credito presumido por operacao
+//! - [`IbsCbsData`](crate::tax_ibs_cbs::IbsCbsData) / [`build_ibs_cbs_xml`](crate::tax_ibs_cbs::build_ibs_cbs_xml) -- `<IBSCBS>` element inside `<imposto>`
+//! - Sub-groups: [`GIbsCbsData`](crate::tax_ibs_cbs::GIbsCbsData), [`GIbsUfData`](crate::tax_ibs_cbs::GIbsUfData), [`GIbsMunData`](crate::tax_ibs_cbs::GIbsMunData), [`GCbsData`](crate::tax_ibs_cbs::GCbsData)
+//! - [`GDifData`](crate::tax_ibs_cbs::GDifData), [`GDevTribData`](crate::tax_ibs_cbs::GDevTribData), [`GRedData`](crate::tax_ibs_cbs::GRedData) -- optional sub-sub-groups
+//! - [`GTribRegularData`](crate::tax_ibs_cbs::GTribRegularData) -- tributacao regular
+//! - [`GTribCompraGovData`](crate::tax_ibs_cbs::GTribCompraGovData) -- compra governamental
+//! - [`GIbsCbsMonoData`](crate::tax_ibs_cbs::GIbsCbsMonoData) -- monofasico (combustiveis)
+//! - [`GTransfCredData`](crate::tax_ibs_cbs::GTransfCredData) -- transferencia de credito
+//! - [`GCredPresIbsZfmData`](crate::tax_ibs_cbs::GCredPresIbsZfmData) -- credito presumido ZFM
+//! - [`GAjusteCompetData`](crate::tax_ibs_cbs::GAjusteCompetData) -- ajuste de competencia
+//! - [`GEstornoCredData`](crate::tax_ibs_cbs::GEstornoCredData) -- estorno de credito
+//! - [`GCredPresOperData`](crate::tax_ibs_cbs::GCredPresOperData) -- credito presumido por operacao
 
 use serde::{Deserialize, Serialize};
 

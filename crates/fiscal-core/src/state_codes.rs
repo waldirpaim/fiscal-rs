@@ -1,10 +1,10 @@
 //! Brazilian state IBGE code lookup tables and helper functions.
 //!
 //! Two static maps are provided:
-//! - [`STATE_IBGE_CODES`] — two-letter UF abbreviation → IBGE numeric `cUF` code.
-//! - [`IBGE_TO_UF`] — IBGE numeric code → two-letter UF abbreviation (reverse).
+//! - [`STATE_IBGE_CODES`](crate::state_codes::STATE_IBGE_CODES) — two-letter UF abbreviation → IBGE numeric `cUF` code.
+//! - [`IBGE_TO_UF`](crate::state_codes::IBGE_TO_UF) — IBGE numeric code → two-letter UF abbreviation (reverse).
 //!
-//! Use [`get_state_code`] and [`get_state_by_code`] for ergonomic access
+//! Use [`get_state_code`](crate::state_codes::get_state_code) and [`get_state_by_code`](crate::state_codes::get_state_by_code) for ergonomic access
 //! with proper error handling.
 
 use std::collections::HashMap;

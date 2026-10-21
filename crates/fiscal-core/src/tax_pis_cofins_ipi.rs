@@ -1,14 +1,14 @@
 //! PIS, COFINS, IPI, and II (import tax) XML generation for NF-e items.
 //!
 //! Public entry points:
-//! - [`build_pis_xml`] / [`build_pis_st_xml`] — `<PIS>` / `<PISST>` elements
-//! - [`build_cofins_xml`] / [`build_cofins_st_xml`] — `<COFINS>` / `<COFINSST>` elements
-//! - [`build_ipi_xml`] — `<IPI>` element (IPITrib or IPINT)
-//! - [`build_ii_xml`] — `<II>` import-tax element
+//! - [`build_pis_xml`](crate::tax_pis_cofins_ipi::build_pis_xml) / [`build_pis_st_xml`](crate::tax_pis_cofins_ipi::build_pis_st_xml) — `<PIS>` / `<PISST>` elements
+//! - [`build_cofins_xml`](crate::tax_pis_cofins_ipi::build_cofins_xml) / [`build_cofins_st_xml`](crate::tax_pis_cofins_ipi::build_cofins_st_xml) — `<COFINS>` / `<COFINSST>` elements
+//! - [`build_ipi_xml`](crate::tax_pis_cofins_ipi::build_ipi_xml) — `<IPI>` element (IPITrib or IPINT)
+//! - [`build_ii_xml`](crate::tax_pis_cofins_ipi::build_ii_xml) — `<II>` import-tax element
 //!
 //! Internally PIS and COFINS share a single generic engine parameterised by
-//! [`ContributionTaxConfig`]; their public APIs accept separate typed structs
-//! ([`PisData`] / [`CofinsData`]) so callers remain independent.
+//! `ContributionTaxConfig`; their public APIs accept separate typed structs
+//! ([`PisData`](crate::tax_pis_cofins_ipi::PisData) / [`CofinsData`](crate::tax_pis_cofins_ipi::CofinsData)) so callers remain independent.
 
 use serde::{Deserialize, Serialize};
 

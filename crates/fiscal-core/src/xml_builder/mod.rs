@@ -1,6 +1,6 @@
 //! NF-e/NFC-e XML builder module.
 //!
-//! Provides [`InvoiceBuilder`] — a typestate builder that enforces the
+//! Provides [`InvoiceBuilder`](crate::xml_builder::InvoiceBuilder) — a typestate builder that enforces the
 //! invoice lifecycle at compile time:
 //!
 //! ```text

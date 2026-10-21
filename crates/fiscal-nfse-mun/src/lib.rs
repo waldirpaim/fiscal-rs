@@ -4,8 +4,22 @@
 //! Nacional (SP, Guarulhos, Sorocaba, Caraguatatuba, Santana de Parnaíba, ...).
 //!
 //! Design: um **modelo comum** ([`model`]) + uma **interface padrão**
-//! ([`provider::MunicipalProvider`]). Cada município pluga a diferença num
-//! provedor; o [`registry`] roteia IBGE → provedor. Transporte (SOAP/REST +
+#![cfg_attr(
+    feature = "client",
+    doc = "([`provider::MunicipalProvider`]). Cada município pluga a diferença num"
+)]
+#![cfg_attr(
+    not(feature = "client"),
+    doc = "(`provider::MunicipalProvider` (feature `client`)). Cada município pluga a diferença num"
+)]
+#![cfg_attr(
+    feature = "client",
+    doc = "provedor; o [`registry`] roteia IBGE → provedor. Transporte (SOAP/REST +"
+)]
+#![cfg_attr(
+    not(feature = "client"),
+    doc = "provedor; o `registry` (feature `client`) roteia IBGE → provedor. Transporte (SOAP/REST +"
+)]
 //! mTLS) atrás da feature `client`.
 //!
 //! Famílias de provedor:

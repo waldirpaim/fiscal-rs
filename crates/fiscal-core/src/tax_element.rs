@@ -1,8 +1,8 @@
 //! Internal building blocks for tax XML element serialisation.
 //!
-//! [`TaxField`] and [`TaxElement`] form an intermediate representation used by
+//! [`TaxField`](crate::tax_element::TaxField) and [`TaxElement`](crate::tax_element::TaxElement) form an intermediate representation used by
 //! tax computation functions (ICMS, PIS, COFINS, IPI, II, ISSQN) before
-//! rendering to an XML string via [`serialize_tax_element`].  Application code
+//! rendering to an XML string via [`serialize_tax_element`](crate::tax_element::serialize_tax_element).  Application code
 //! should not need to use these types directly.
 
 /// A single XML field represented as a `<name>value</name>` pair.
@@ -46,7 +46,7 @@ pub fn optional_field(name: &str, value: Option<&str>) -> Option<TaxField> {
 ///
 /// # Errors
 ///
-/// Returns [`FiscalError::MissingRequiredField`] if `value` is `None`.
+/// Returns [`FiscalError::MissingRequiredField`](crate::FiscalError::MissingRequiredField) if `value` is `None`.
 pub fn required_field(name: &str, value: Option<&str>) -> Result<TaxField, crate::FiscalError> {
     match value {
         Some(v) => Ok(TaxField::new(name, v)),

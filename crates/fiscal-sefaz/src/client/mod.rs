@@ -1,6 +1,6 @@
 //! Async SEFAZ web service client with mTLS authentication.
 //!
-//! [`SefazClient`] wraps a [`reqwest::Client`] pre-configured with the
+//! [`SefazClient`](crate::client::SefazClient) wraps a [`reqwest::Client`] pre-configured with the
 //! emitter's A1 digital certificate (PFX/PKCS#12) for mutual TLS.
 //!
 //! ```rust,no_run

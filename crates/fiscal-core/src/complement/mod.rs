@@ -1,12 +1,13 @@
 //! Functions for attaching SEFAZ authorization protocols to signed XML documents.
 //!
-//! Each submodule handles one type of protocol attachment:
-//! - [`protocol`] — NFe authorization (`<nfeProc>`)
-//! - [`inutilizacao`] — Number voiding (`<ProcInutNFe>`)
-//! - [`event`] — Event protocol (`<procEventoNFe>`)
-//! - [`b2b`] — B2B financial wrapper (`<nfeProcB2B>`)
-//! - [`cancellation`] — Cancellation event attachment
-//! - [`helpers`] — Internal XML parsing utilities
+//! Public helpers handle each type of protocol attachment:
+//! - [`attach_protocol`](crate::complement::attach_protocol) — NFe authorization (`<nfeProc>`)
+//! - [`attach_inutilizacao`](crate::complement::attach_inutilizacao) — Number voiding (`<ProcInutNFe>`)
+//! - [`attach_event_protocol`](crate::complement::attach_event_protocol) — Event protocol (`<procEventoNFe>`)
+//! - [`attach_b2b`](crate::complement::attach_b2b) — B2B financial wrapper (`<nfeProcB2B>`)
+//! - [`attach_cancellation`](crate::complement::attach_cancellation) — Cancellation event attachment
+//!
+//! Internal XML parsing utilities live in `helpers`.
 
 mod b2b;
 mod cancellation;
