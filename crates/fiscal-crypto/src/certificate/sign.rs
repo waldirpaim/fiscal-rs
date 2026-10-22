@@ -434,7 +434,7 @@ pub fn rsa_sha1_base64(data: &[u8], private_key_pem: &str) -> Result<String, Fis
         prefix: SHA1_PREFIX.into(),
     };
     let sig = private_key
-        .sign(scheme, &hash)
+        .sign_with_rng(&mut rsa::rand_core::OsRng, scheme, &hash)
         .map_err(|e| FiscalError::Certificate(format!("RSA-SHA1 signing failed: {e}")))?;
     Ok(BASE64.encode(&sig))
 }
@@ -534,7 +534,7 @@ pub fn sign_sp_lote_xml(
         prefix: SHA1_PREFIX.into(),
     };
     let sig_bytes = private_key
-        .sign(scheme, &raw_hash)
+        .sign_with_rng(&mut rsa::rand_core::OsRng, scheme, &raw_hash)
         .map_err(|e| FiscalError::Certificate(format!("RSA-SHA1 signing failed: {e}")))?;
     let signature_value = BASE64.encode(&sig_bytes);
 
@@ -632,7 +632,7 @@ fn sign_xml_generic(
     };
 
     let signature_bytes = private_key
-        .sign(scheme, &raw_digest)
+        .sign_with_rng(&mut rsa::rand_core::OsRng, scheme, &raw_digest)
         .map_err(|e| FiscalError::Certificate(format!("RSA signing failed: {e}")))?;
 
     let signature_value = BASE64.encode(&signature_bytes);

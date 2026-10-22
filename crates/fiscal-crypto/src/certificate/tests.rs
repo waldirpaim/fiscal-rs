@@ -811,3 +811,56 @@ fn sign_cte_xml_missing_inf_cte_errors() {
     let result = sign_cte_xml("<CTe><other/></CTe>", &cert.private_key, &cert.certificate);
     assert!(result.is_err());
 }
+
+// ── RSA blinding ─────────────────────────────────────────────────
+
+/// A assinatura usa blinding (`sign_with_rng`) contra o vazamento por tempo do
+/// RUSTSEC-2023-0071. O PKCS#1 v1.5 é determinístico: com ou sem blinding, a
+/// mesma entrada dá a mesma assinatura, válida para a chave pública.
+#[test]
+fn rsa_blinding_keeps_the_pkcs1_signature() {
+    use rsa::pkcs1v15::Pkcs1v15Sign;
+    use rsa::pkcs8::DecodePrivateKey as _;
+    use sha1::Digest as _;
+
+    let pfx = test_pfx_cnpj();
+    let cert_data = load_certificate(&pfx, PASSWORD).unwrap();
+    let xml = concat!(
+        r#"<envEvento xmlns="http://www.portalfiscal.inf.br/nfe" versao="1.00"><idLote>1</idLote>"#,
+        r#"<evento versao="1.00"><infEvento Id="ID2102104125010615725000011655001000000001100000001301">"#,
+        "<cOrgao>91</cOrgao><tpAmb>2</tpAmb><CNPJ>06157250000116</CNPJ>",
+        "<chNFe>41250106157250000116550010000000011000000013</chNFe>",
+        "<dhEvento>2026-10-22T09:00:00-03:00</dhEvento><tpEvento>210210</tpEvento>",
+        "<nSeqEvento>1</nSeqEvento><verEvento>1.00</verEvento>",
+        r#"<detEvento versao="1.00"><descEvento>Ciencia da Operacao</descEvento></detEvento>"#,
+        "</infEvento></evento></envEvento>"
+    );
+
+    let first = sign_event_xml(xml, &cert_data.private_key, &cert_data.certificate).unwrap();
+    let second = sign_event_xml(xml, &cert_data.private_key, &cert_data.certificate).unwrap();
+    assert_eq!(first, second);
+
+    let value = |signed: &str| {
+        let start = signed.find("<SignatureValue>").unwrap() + "<SignatureValue>".len();
+        let end = signed.find("</SignatureValue>").unwrap();
+        BASE64.decode(&signed[start..end]).unwrap()
+    };
+    let si_start = first.find("<SignedInfo>").unwrap();
+    let si_end = first.find("</SignedInfo>").unwrap() + "</SignedInfo>".len();
+    let canonical = first[si_start..si_end].replacen(
+        "<SignedInfo>",
+        "<SignedInfo xmlns=\"http://www.w3.org/2000/09/xmldsig#\">",
+        1,
+    );
+    let digest = sha1::Sha1::digest(canonical.as_bytes());
+    let private_key = rsa::RsaPrivateKey::from_pkcs8_pem(&cert_data.private_key).unwrap();
+    // A operação sem blinding dá os mesmos bytes.
+    let unblinded = private_key
+        .sign(Pkcs1v15Sign::new::<sha1::Sha1>(), &digest)
+        .unwrap();
+    assert_eq!(value(&first), unblinded);
+    private_key
+        .to_public_key()
+        .verify(Pkcs1v15Sign::new::<sha1::Sha1>(), &digest, &value(&first))
+        .expect("assinatura válida");
+}
