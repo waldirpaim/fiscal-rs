@@ -460,6 +460,11 @@ impl SefazClient {
         let meta = service.meta();
         // AN is not a real state code, but we use it for envelope building
         let envelope = soap::build_envelope(request_xml, "AN", &meta)?;
+
+        #[cfg(test)]
+        if let Some(transport) = &self.test_transport {
+            return Ok(transport.send(&url, &envelope));
+        }
         let action = soap::build_action(&meta);
 
         let content_type = format!("application/soap+xml;charset=utf-8;action=\"{action}\"");

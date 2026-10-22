@@ -222,7 +222,10 @@ impl SefazClient {
         let raw = self
             .send_an(SefazService::RecepcaoEvento, environment, &signed_xml)
             .await?;
-        response_parsers::parse_cancellation_response(&raw)
+        let mut resp = response_parsers::parse_cancellation_response(&raw)?;
+        resp.signed_event_xml = signed_xml;
+        resp.raw_response = raw;
+        Ok(resp)
     }
 
     /// Query the distribution of fiscal documents (DF-e) from the national
@@ -305,7 +308,10 @@ impl SefazClient {
         let raw = self
             .send_an(SefazService::RecepcaoEvento, environment, &signed_xml)
             .await?;
-        response_parsers::parse_cancellation_response(&raw)
+        let mut resp = response_parsers::parse_cancellation_response(&raw)?;
+        resp.signed_event_xml = signed_xml;
+        resp.raw_response = raw;
+        Ok(resp)
     }
 
     /// Check EPEC NFC-e service status (`EPECStatusServico`, SP only).
@@ -379,7 +385,10 @@ impl SefazClient {
                 65,
             )
             .await?;
-        response_parsers::parse_cancellation_response(&raw)
+        let mut resp = response_parsers::parse_cancellation_response(&raw)?;
+        resp.signed_event_xml = signed_xml;
+        resp.raw_response = raw;
+        Ok(resp)
     }
 
     /// Cancel an NFC-e by substitution (`RecepcaoEvento4`, tpEvento=110112).
@@ -434,7 +443,10 @@ impl SefazClient {
                 65,
             )
             .await?;
-        response_parsers::parse_cancellation_response(&raw)
+        let mut resp = response_parsers::parse_cancellation_response(&raw)?;
+        resp.signed_event_xml = signed_xml;
+        resp.raw_response = raw;
+        Ok(resp)
     }
 
     /// Download an NF-e by its 44-digit access key (`NFeDistribuicaoDFe`).
@@ -530,7 +542,10 @@ impl SefazClient {
             self.send(SefazService::RecepcaoEvento, uf, environment, &signed_xml)
                 .await?
         };
-        response_parsers::parse_cancellation_response(&raw)
+        let mut resp = response_parsers::parse_cancellation_response(&raw)?;
+        resp.signed_event_xml = signed_xml;
+        resp.raw_response = raw;
+        Ok(resp)
     }
 
     /// Send a batch of manifestação do destinatário events.
@@ -630,6 +645,9 @@ impl SefazClient {
                 &signed_xml,
             )
             .await?;
-        response_parsers::parse_cancellation_response(&raw)
+        let mut resp = response_parsers::parse_cancellation_response(&raw)?;
+        resp.signed_event_xml = signed_xml;
+        resp.raw_response = raw;
+        Ok(resp)
     }
 }
