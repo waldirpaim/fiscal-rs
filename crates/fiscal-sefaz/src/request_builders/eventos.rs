@@ -1,5 +1,6 @@
 use fiscal_core::state_codes::get_state_code;
 use fiscal_core::types::SefazEnvironment;
+use fiscal_core::xml_utils::escape_xml;
 
 use super::event_core::event_types;
 use super::helpers::{build_event_xml, build_event_xml_with_org};
@@ -38,6 +39,7 @@ pub fn build_cancela_request(
         "Cancellation justification (xJust) is required"
     );
 
+    let justification = escape_xml(justification);
     let additional = format!("<nProt>{protocol}</nProt><xJust>{justification}</xJust>");
 
     build_event_xml(
@@ -95,6 +97,7 @@ pub fn build_cce_request(
         "emissao ou de saida."
     );
 
+    let correction = escape_xml(correction);
     let additional =
         format!("<xCorrecao>{correction}</xCorrecao><xCondUso>{x_cond_uso}</xCondUso>");
 
@@ -142,7 +145,7 @@ pub fn build_manifesta_request(
 
     let additional = if tp_evento == event_types::OPERATION_NOT_PERFORMED {
         match justification {
-            Some(just) if !just.is_empty() => format!("<xJust>{just}</xJust>"),
+            Some(just) if !just.is_empty() => format!("<xJust>{}</xJust>", escape_xml(just)),
             _ => String::new(),
         }
     } else {
@@ -203,6 +206,7 @@ pub fn build_cancel_substituicao_request(
     );
 
     let c_orgao = &access_key[..2];
+    let justification = escape_xml(justification);
     let additional = format!(
         "<cOrgaoAutor>{c_orgao}</cOrgaoAutor>\
          <tpAutor>1</tpAutor>\
@@ -330,6 +334,7 @@ pub fn build_comprovante_entrega_request(
     tax_id: &str,
 ) -> String {
     let c_uf = get_state_code(issuer_uf).expect("Invalid state code");
+    let name = escape_xml(name);
 
     let mut additional = format!(
         "<cOrgaoAutor>{c_uf}</cOrgaoAutor>\
@@ -466,7 +471,7 @@ pub fn build_insucesso_entrega_request(
     if reason_type == 4 {
         if let Some(just) = reason_justification {
             if !just.is_empty() {
-                additional.push_str(&format!("<xJustMotivo>{just}</xJustMotivo>"));
+                additional.push_str(&format!("<xJustMotivo>{}</xJustMotivo>", escape_xml(just)));
             }
         }
     }

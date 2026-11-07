@@ -1,4 +1,5 @@
 use fiscal_core::types::SefazEnvironment;
+use fiscal_core::xml_utils::escape_xml;
 
 use super::event_core::event_types;
 use super::helpers::build_event_xml_with_org;
@@ -89,7 +90,7 @@ pub fn build_conciliacao_request(
             }
             additional.push_str(&format!("<tPag>{}</tPag>", pag.t_pag));
             if let Some(ref x) = pag.x_pag {
-                additional.push_str(&format!("<xPag>{x}</xPag>"));
+                additional.push_str(&format!("<xPag>{}</xPag>", escape_xml(x)));
             }
             additional.push_str(&format!("<vPag>{}</vPag>", pag.v_pag));
             additional.push_str(&format!("<dPag>{}</dPag>", pag.d_pag));

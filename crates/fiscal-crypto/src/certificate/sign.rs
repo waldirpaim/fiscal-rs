@@ -471,8 +471,8 @@ pub fn sign_abrasf_xml(
 ///
 /// # Errors
 ///
-/// Returns [`FiscalError::Certificate`] if the closing `root_tag` is missing,
-/// the private key cannot be parsed, or signing fails.
+/// Returns [`FiscalError::Certificate`] if the XML contains an unterminated tag,
+/// the closing `root_tag` is missing, the private key cannot be parsed, or signing fails.
 pub fn sign_sp_lote_xml(
     xml: &str,
     root_tag: &str,
@@ -483,7 +483,7 @@ pub fn sign_sp_lote_xml(
     let without_sig = remove_signature_element(xml);
 
     // 2. Canonicalize the entire document
-    let canonical = canonicalize_xml(&without_sig);
+    let canonical = canonicalize_xml(&without_sig)?;
 
     // 3. Compute SHA-1 digest
     let digest = compute_digest(canonical.as_bytes(), SignatureAlgorithm::Sha1);
@@ -586,7 +586,7 @@ fn sign_xml_generic(
     let with_inherited_ns = ensure_inherited_namespace(&without_sig, xml, signed_tag);
 
     // 5. Canonicalize the signed element (C14N 1.0 — sorts attributes)
-    let canonical = canonicalize_xml(&with_inherited_ns);
+    let canonical = canonicalize_xml(&with_inherited_ns)?;
 
     // 6. Compute digest of the canonical form using the selected algorithm
     let digest = compute_digest(canonical.as_bytes(), algorithm);
