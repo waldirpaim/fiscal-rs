@@ -254,7 +254,7 @@ fn extract_element_id_no_id_attr() {
 #[test]
 fn canonicalize_xml_removes_declaration() {
     let xml = "<?xml version=\"1.0\"?><root><a/></root>";
-    let canonical = canonicalize_xml(xml);
+    let canonical = canonicalize_xml(xml).expect("valid XML");
     assert!(!canonical.contains("<?xml"));
     // Self-closing should be expanded
     assert!(canonical.contains("<a></a>"));
@@ -263,7 +263,7 @@ fn canonicalize_xml_removes_declaration() {
 #[test]
 fn canonicalize_xml_sorts_attributes() {
     let xml = r#"<root b="2" a="1"><child/></root>"#;
-    let canonical = canonicalize_xml(xml);
+    let canonical = canonicalize_xml(xml).expect("valid XML");
     // Attributes should be sorted: a before b
     assert!(canonical.contains(r#"<root a="1" b="2">"#));
 }
@@ -271,7 +271,7 @@ fn canonicalize_xml_sorts_attributes() {
 #[test]
 fn canonicalize_xml_ns_first() {
     let xml = r#"<root b="2" xmlns="http://example.com" a="1"><child/></root>"#;
-    let canonical = canonicalize_xml(xml);
+    let canonical = canonicalize_xml(xml).expect("valid XML");
     // xmlns should come before regular attributes
     assert!(canonical.starts_with(r#"<root xmlns="http://example.com""#));
 }
@@ -424,7 +424,7 @@ fn canonicalize_xml_sorts_multiple_ns_prefixes() {
     // Multiple namespace declarations: default xmlns should come first,
     // then prefixed namespaces sorted alphabetically
     let xml = r#"<root xmlns:z="http://z.example.com" xmlns="http://default.example.com" xmlns:a="http://a.example.com"><child/></root>"#;
-    let canonical = canonicalize_xml(xml);
+    let canonical = canonicalize_xml(xml).expect("valid XML");
     // Default xmlns first, then xmlns:a, then xmlns:z
     assert!(canonical.contains(
             r#"<root xmlns="http://default.example.com" xmlns:a="http://a.example.com" xmlns:z="http://z.example.com">"#
@@ -437,7 +437,7 @@ fn canonicalize_xml_sorts_multiple_ns_prefixes() {
 fn canonicalize_xml_self_closing_with_attrs() {
     // Self-closing tag with attributes should be expanded to <tag attrs></tag>
     let xml = r#"<root><item b="2" a="1"/></root>"#;
-    let canonical = canonicalize_xml(xml);
+    let canonical = canonicalize_xml(xml).expect("valid XML");
     // Attributes sorted, self-closing expanded
     assert!(canonical.contains(r#"<item a="1" b="2"></item>"#));
 }
@@ -810,4 +810,44 @@ fn sign_cte_xml_missing_inf_cte_errors() {
     let cert = load_certificate(&test_pfx_cnpj(), PASSWORD).unwrap();
     let result = sign_cte_xml("<CTe><other/></CTe>", &cert.private_key, &cert.certificate);
     assert!(result.is_err());
+}
+
+#[test]
+fn canonicalize_preserves_literal_apostrophe_and_quote() {
+    // Literal ' and " in text content must survive canonicalization unchanged so
+    // the digest matches SEFAZ's re-canonicalization (rejeicao cStat 297 fix).
+    let xml = "<xNome>D'ALESSANDRO \"JR\"</xNome>";
+    let c = canonicalize_xml(xml).expect("valid XML");
+    assert!(c.contains("D'ALESSANDRO \"JR\""));
+    assert!(!c.contains("&apos;"));
+    assert!(!c.contains("&quot;"));
+}
+
+#[test]
+fn canonicalize_keeps_gt_inside_attribute_value() {
+    // A '>' inside a quoted attribute (e.g. obsCont xCampo from user input)
+    // must not end the tag, otherwise the digest diverges from SEFAZ's (cStat 297).
+    let xml = r#"<obsCont xCampo="A>B" b="1"><xTexto>x</xTexto></obsCont>"#;
+    let c = canonicalize_xml(xml).expect("valid XML");
+    assert_eq!(
+        c,
+        r#"<obsCont b="1" xCampo="A>B"><xTexto>x</xTexto></obsCont>"#
+    );
+}
+
+#[test]
+fn extract_element_id_ignores_gt_in_earlier_attribute() {
+    let xml = r#"<infNFe a="x>y" Id="NFe123" versao="4.00"></infNFe>"#;
+    assert_eq!(extract_element_id(xml, "infNFe").unwrap(), "NFe123");
+}
+
+#[test]
+fn signing_rejects_an_unterminated_attribute() {
+    let xml = r#"<NFe><infNFe Id="NFe123"><obsCont xCampo="A>Bé</infNFe></NFe>"#;
+    let error = sign_xml(xml, "", "").unwrap_err();
+    assert!(error.to_string().contains("Unterminated XML tag"));
+
+    let xml = "<PedidoEnvioLoteRPS><RPS valor=\"A>Bé";
+    let error = sign_sp_lote_xml(xml, "PedidoEnvioLoteRPS", "", "").unwrap_err();
+    assert!(error.to_string().contains("Unterminated XML tag"));
 }

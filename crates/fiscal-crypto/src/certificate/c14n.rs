@@ -2,6 +2,25 @@
 
 use fiscal_core::FiscalError;
 
+/// Byte offset of the `>` that closes the tag starting at `s[0]`, ignoring
+/// any `>` inside a quoted attribute value (C14N leaves `>` literal there).
+fn find_tag_end(s: &str) -> Option<usize> {
+    if s.starts_with("<!") || s.starts_with("<?") {
+        return s.find('>');
+    }
+
+    let mut quote: Option<char> = None;
+    for (i, c) in s.char_indices() {
+        match (quote, c) {
+            (None, '"' | '\'') => quote = Some(c),
+            (Some(q), _) if c == q => quote = None,
+            (None, '>') => return Some(i),
+            _ => {}
+        }
+    }
+    None
+}
+
 /// Extract the `Id` attribute value from the first occurrence of `<tag_name ... Id="...">`.
 pub(super) fn extract_element_id(xml: &str, tag_name: &str) -> Result<String, FiscalError> {
     let pattern = format!("<{tag_name}");
@@ -13,8 +32,10 @@ pub(super) fn extract_element_id(xml: &str, tag_name: &str) -> Result<String, Fi
 
     let rest = &xml[tag_start..];
     // Find the closing > of this opening tag
-    let tag_end = rest
-        .find('>')
+    // Unbalanced quotes: fall back to the first '>' so the Id check below
+    // reports the malformed attribute.
+    let tag_end = find_tag_end(rest)
+        .or_else(|| rest.find('>'))
         .ok_or_else(|| FiscalError::Certificate(format!("<{tag_name}> tag is malformed")))?;
 
     let tag_content = &rest[..tag_end];
@@ -43,7 +64,7 @@ pub(super) fn extract_element_id(xml: &str, tag_name: &str) -> Result<String, Fi
 /// This matches PHP DOMDocument's C14N behavior.
 pub(super) fn ensure_inherited_namespace(element: &str, full_xml: &str, tag_name: &str) -> String {
     // Check if the element already has xmlns
-    let open_end = element.find('>').unwrap_or(element.len());
+    let open_end = find_tag_end(element).unwrap_or(element.len());
     let open_tag = &element[..open_end];
     if open_tag.contains("xmlns=") {
         return element.to_string();
@@ -103,7 +124,7 @@ pub(super) fn remove_signature_element(xml: &str) -> String {
 ///   (sorted by prefix, default namespace first), then regular attributes
 ///   sorted alphabetically by local name
 /// - Expands self-closing tags (`<foo/>` → `<foo></foo>`)
-pub(super) fn canonicalize_xml(xml: &str) -> String {
+pub(super) fn canonicalize_xml(xml: &str) -> Result<String, FiscalError> {
     let mut input = xml;
 
     // Remove XML declaration if present
@@ -114,100 +135,94 @@ pub(super) fn canonicalize_xml(xml: &str) -> String {
     }
 
     let mut result = String::with_capacity(input.len());
-    let mut chars = input.chars().peekable();
+    while let Some(start) = input.find('<') {
+        result.push_str(&input[..start]);
+        let rest = &input[start..];
+        let end = find_tag_end(rest).ok_or_else(|| {
+            FiscalError::Certificate("Unterminated XML tag during canonicalization".to_string())
+        })?;
+        let (tag, remaining) = rest.split_at(end + 1);
+        input = remaining;
 
-    while let Some(ch) = chars.next() {
-        if ch == '<' {
-            // Collect everything up to '>'
-            let mut tag = String::from('<');
-            for c in chars.by_ref() {
-                tag.push(c);
-                if c == '>' {
-                    break;
-                }
-            }
+        // Skip processing instructions, closing tags, comments, CDATA
+        if tag.starts_with("</") || tag.starts_with("<?") || tag.starts_with("<!") {
+            result.push_str(tag);
+            continue;
+        }
 
-            // Skip processing instructions, closing tags, comments, CDATA
-            if tag.starts_with("</") || tag.starts_with("<?") || tag.starts_with("<!") {
-                result.push_str(&tag);
-                continue;
-            }
+        // Opening tag — sort attributes
+        let self_closing = tag.ends_with("/>");
+        let tag_content = if self_closing {
+            &tag[1..tag.len() - 2] // strip < and />
+        } else {
+            &tag[1..tag.len() - 1] // strip < and >
+        };
 
-            // Opening tag — sort attributes
-            let self_closing = tag.ends_with("/>");
-            let tag_content = if self_closing {
-                &tag[1..tag.len() - 2] // strip < and />
-            } else {
-                &tag[1..tag.len() - 1] // strip < and >
-            };
+        let (tag_name, attrs_str) = match tag_content.find(|c: char| c.is_ascii_whitespace()) {
+            Some(pos) => (&tag_content[..pos], tag_content[pos..].trim()),
+            None => (tag_content, ""),
+        };
 
-            let (tag_name, attrs_str) = match tag_content.find(|c: char| c.is_ascii_whitespace()) {
-                Some(pos) => (&tag_content[..pos], tag_content[pos..].trim()),
-                None => (tag_content, ""),
-            };
-
-            if attrs_str.is_empty() {
-                if self_closing {
-                    // C14N expands self-closing to <tag></tag>
-                    result.push('<');
-                    result.push_str(tag_name);
-                    result.push_str("></");
-                    result.push_str(tag_name);
-                    result.push('>');
-                } else {
-                    result.push_str(&tag);
-                }
-                continue;
-            }
-
-            // Parse attributes
-            let attrs = parse_attributes(attrs_str);
-
-            // Separate namespace declarations from regular attributes
-            let mut ns_attrs: Vec<(&str, &str)> = Vec::new();
-            let mut reg_attrs: Vec<(&str, &str)> = Vec::new();
-
-            for (name, value) in &attrs {
-                if *name == "xmlns" || name.starts_with("xmlns:") {
-                    ns_attrs.push((name, value));
-                } else {
-                    reg_attrs.push((name, value));
-                }
-            }
-
-            // Sort namespace declarations: default namespace first, then by prefix
-            ns_attrs.sort_by(|a, b| match (a.0, b.0) {
-                ("xmlns", _) => std::cmp::Ordering::Less,
-                (_, "xmlns") => std::cmp::Ordering::Greater,
-                _ => a.0.cmp(b.0),
-            });
-
-            // Sort regular attributes by local name
-            reg_attrs.sort_by(|a, b| a.0.cmp(b.0));
-
-            // Rebuild tag
-            result.push('<');
-            result.push_str(tag_name);
-            for (name, value) in ns_attrs.iter().chain(reg_attrs.iter()) {
-                result.push(' ');
-                result.push_str(name);
-                result.push_str("=\"");
-                result.push_str(value);
-                result.push('"');
-            }
+        if attrs_str.is_empty() {
             if self_closing {
+                // C14N expands self-closing to <tag></tag>
+                result.push('<');
+                result.push_str(tag_name);
                 result.push_str("></");
                 result.push_str(tag_name);
                 result.push('>');
             } else {
-                result.push('>');
+                result.push_str(tag);
             }
+            continue;
+        }
+
+        // Parse attributes
+        let attrs = parse_attributes(attrs_str);
+
+        // Separate namespace declarations from regular attributes
+        let mut ns_attrs: Vec<(&str, &str)> = Vec::new();
+        let mut reg_attrs: Vec<(&str, &str)> = Vec::new();
+
+        for (name, value) in &attrs {
+            if *name == "xmlns" || name.starts_with("xmlns:") {
+                ns_attrs.push((name, value));
+            } else {
+                reg_attrs.push((name, value));
+            }
+        }
+
+        // Sort namespace declarations: default namespace first, then by prefix
+        ns_attrs.sort_by(|a, b| match (a.0, b.0) {
+            ("xmlns", _) => std::cmp::Ordering::Less,
+            (_, "xmlns") => std::cmp::Ordering::Greater,
+            _ => a.0.cmp(b.0),
+        });
+
+        // Sort regular attributes by local name
+        reg_attrs.sort_by(|a, b| a.0.cmp(b.0));
+
+        // Rebuild tag
+        result.push('<');
+        result.push_str(tag_name);
+        for (name, value) in ns_attrs.iter().chain(reg_attrs.iter()) {
+            result.push(' ');
+            result.push_str(name);
+            result.push_str("=\"");
+            result.push_str(value);
+            result.push('"');
+        }
+        if self_closing {
+            result.push_str("></");
+            result.push_str(tag_name);
+            result.push('>');
         } else {
-            result.push(ch);
+            result.push('>');
         }
     }
 
-    result
+    result.push_str(input);
+    Ok(result)
 }
 
 /// Parse attributes from a tag's attribute string.
