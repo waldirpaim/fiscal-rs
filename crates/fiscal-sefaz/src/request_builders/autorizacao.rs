@@ -1,6 +1,7 @@
 use fiscal_core::constants::{NFE_NAMESPACE, NFE_VERSION};
 use fiscal_core::state_codes::get_state_code;
 use fiscal_core::types::SefazEnvironment;
+use fiscal_core::xml_utils::escape_xml;
 
 use super::helpers::{strip_xml_declaration, tax_id_xml_tag, validate_access_key};
 
@@ -215,6 +216,7 @@ pub fn build_inutilizacao_request(
         format!("<CNPJ>{digits}</CNPJ>")
     };
 
+    let justification = escape_xml(justification);
     format!(
         "<inutNFe xmlns=\"{NFE_NAMESPACE}\" versao=\"{NFE_VERSION}\"><infInut Id=\"{id}\"><tpAmb>{tp_amb}</tpAmb><xServ>INUTILIZAR</xServ><cUF>{cuf}</cUF><ano>{year:02}</ano>{tax_tag}<mod>{model}</mod><serie>{series}</serie><nNFIni>{start_number}</nNFIni><nNFFin>{end_number}</nNFFin><xJust>{justification}</xJust></infInut></inutNFe>"
     )

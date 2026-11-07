@@ -10,6 +10,8 @@ use super::helpers::{extract_section, strip_xml_declaration, tax_id_xml_tag};
 const TEST_KEY: &str = "35240112345678000195550010000000011000000019";
 const TEST_CNPJ: &str = "12345678000195";
 const TEST_CPF: &str = "12345678901";
+const FREE_TEXT: &str = "D'Ávila & Filhos <unidade \"A\">";
+const ESCAPED_TEXT: &str = "D'Ávila &amp; Filhos &lt;unidade \"A\"&gt;";
 
 // ── Fix #1: cOrgao = 91 for manifestacao ────────────────────────
 
@@ -48,12 +50,12 @@ fn manifesta_request_operation_not_performed_includes_justification() {
     let xml = build_manifesta_request(
         TEST_KEY,
         "210240",
-        Some("Motivo teste da operacao nao realizada"),
+        Some(FREE_TEXT),
         1,
         SefazEnvironment::Homologation,
         TEST_CNPJ,
     );
-    assert!(xml.contains("<xJust>Motivo teste da operacao nao realizada</xJust>"));
+    assert!(xml.contains(&format!("<xJust>{ESCAPED_TEXT}</xJust>")));
     assert!(xml.contains("<tpEvento>210240</tpEvento>"));
 }
 
@@ -62,7 +64,7 @@ fn cancela_request_uses_c_orgao_from_access_key() {
     let xml = build_cancela_request(
         TEST_KEY,
         "135220000009921",
-        "Erro na emissao da NF-e",
+        FREE_TEXT,
         1,
         SefazEnvironment::Homologation,
         TEST_CNPJ,
@@ -72,6 +74,19 @@ fn cancela_request_uses_c_orgao_from_access_key() {
         xml.contains("<cOrgao>35</cOrgao>"),
         "Cancellation must use cOrgao from access key (35), got: {xml}"
     );
+    assert!(xml.contains(&format!("<xJust>{ESCAPED_TEXT}</xJust>")));
+}
+
+#[test]
+fn cce_request_escapes_correction_text() {
+    let xml = build_cce_request(
+        TEST_KEY,
+        FREE_TEXT,
+        1,
+        SefazEnvironment::Homologation,
+        TEST_CNPJ,
+    );
+    assert!(xml.contains(&format!("<xCorrecao>{ESCAPED_TEXT}</xCorrecao>")));
 }
 
 // ── Fix #3: CPF in inutilizacao ─────────────────────────────────
@@ -85,7 +100,7 @@ fn inutilizacao_with_cnpj_uses_cnpj_tag() {
         1,
         1,
         10,
-        "Pulo de numeracao",
+        FREE_TEXT,
         SefazEnvironment::Homologation,
         "SP",
     );
@@ -94,6 +109,7 @@ fn inutilizacao_with_cnpj_uses_cnpj_tag() {
         "Should use <CNPJ> tag for 14-digit tax ID"
     );
     assert!(!xml.contains("<CPF>"), "Should not contain <CPF> tag");
+    assert!(xml.contains(&format!("<xJust>{ESCAPED_TEXT}</xJust>")));
 }
 
 #[test]
@@ -426,7 +442,7 @@ fn cancel_substituicao_request_structure() {
         TEST_KEY,
         ref_key,
         "135220000009921",
-        "Erro na emissao da NFCe",
+        FREE_TEXT,
         "FISCAL-RS-1.0",
         1,
         SefazEnvironment::Homologation,
@@ -438,7 +454,7 @@ fn cancel_substituicao_request_structure() {
     assert!(xml.contains("<tpAutor>1</tpAutor>"));
     assert!(xml.contains("<verAplic>FISCAL-RS-1.0</verAplic>"));
     assert!(xml.contains("<nProt>135220000009921</nProt>"));
-    assert!(xml.contains("<xJust>Erro na emissao da NFCe</xJust>"));
+    assert!(xml.contains(&format!("<xJust>{ESCAPED_TEXT}</xJust>")));
     assert!(xml.contains(&format!("<chNFeRef>{ref_key}</chNFeRef>")));
     assert!(xml.contains("<cOrgao>35</cOrgao>"));
 }
@@ -514,7 +530,7 @@ fn comprovante_entrega_request_structure() {
         "FISCAL-RS-1.0",
         "2024-01-15T10:30:00-03:00",
         "12345678901",
-        "Joao da Silva",
+        FREE_TEXT,
         Some("-23.5505"),
         Some("-46.6333"),
         "abc123hashbase64==",
@@ -531,7 +547,7 @@ fn comprovante_entrega_request_structure() {
     assert!(xml.contains("<tpAutor>1</tpAutor>"));
     assert!(xml.contains("<dhEntrega>2024-01-15T10:30:00-03:00</dhEntrega>"));
     assert!(xml.contains("<nDoc>12345678901</nDoc>"));
-    assert!(xml.contains("<xNome>Joao da Silva</xNome>"));
+    assert!(xml.contains(&format!("<xNome>{ESCAPED_TEXT}</xNome>")));
     assert!(xml.contains("<latGPS>-23.5505</latGPS>"));
     assert!(xml.contains("<longGPS>-46.6333</longGPS>"));
     assert!(xml.contains("<hashComprovante>abc123hashbase64==</hashComprovante>"));
@@ -626,7 +642,7 @@ fn insucesso_entrega_with_reason_type_4_includes_justification() {
         "2024-01-15T14:00:00-03:00",
         None,
         4,
-        Some("Destinatario mudou de endereco"),
+        Some(FREE_TEXT),
         None,
         None,
         "hashval==",
@@ -637,7 +653,7 @@ fn insucesso_entrega_with_reason_type_4_includes_justification() {
         "12345678000199",
     );
     assert!(xml.contains("<tpMotivo>4</tpMotivo>"));
-    assert!(xml.contains("<xJustMotivo>Destinatario mudou de endereco</xJustMotivo>"));
+    assert!(xml.contains(&format!("<xJustMotivo>{ESCAPED_TEXT}</xJustMotivo>")));
     assert!(!xml.contains("<nTentativa>"));
     assert!(!xml.contains("<latGPS>"));
 }
@@ -983,7 +999,7 @@ fn conciliacao_request_structure() {
     let det_pag = vec![ConciliacaoDetPag {
         ind_pag: Some("0".to_string()),
         t_pag: "01".to_string(),
-        x_pag: Some("Dinheiro".to_string()),
+        x_pag: Some(FREE_TEXT.to_string()),
         v_pag: "150.00".to_string(),
         d_pag: "2024-06-15".to_string(),
         cnpj_pag: None,
@@ -1012,7 +1028,7 @@ fn conciliacao_request_structure() {
     assert!(xml.contains("<detPag>"));
     assert!(xml.contains("<indPag>0</indPag>"));
     assert!(xml.contains("<tPag>01</tPag>"));
-    assert!(xml.contains("<xPag>Dinheiro</xPag>"));
+    assert!(xml.contains(&format!("<xPag>{ESCAPED_TEXT}</xPag>")));
     assert!(xml.contains("<vPag>150.00</vPag>"));
     assert!(xml.contains("<dPag>2024-06-15</dPag>"));
     assert!(xml.contains("</detPag>"));
