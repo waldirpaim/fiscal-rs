@@ -9,6 +9,8 @@ members = [
     "crates/fiscal-xsd",
     "crates/fiscal-mdfe",
     "crates/fiscal-nfse-mun",
+    "crates/fiscal-pdf",
+    "crates/fiscal-danfe",
 ]
 exclude = [
     "benchmarks/rust",

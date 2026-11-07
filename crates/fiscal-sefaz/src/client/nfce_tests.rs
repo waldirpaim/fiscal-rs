@@ -169,3 +169,89 @@ async fn inutilize_nfce_routes_and_preserves_signed_xml() {
         assert_eq!(response, raw);
     }
 }
+
+// ── Eventos no Ambiente Nacional (manifestação do destinatário) ─────────────
+
+const NFE_ACCESS_KEY: &str = "41250106157250000116550010000000011000000013";
+const MANIFEST_RESPONSE: &str = concat!(
+    "<retEnvEvento><idLote>1</idLote><cStat>128</cStat><retEvento><infEvento>",
+    "<cStat>135</cStat><xMotivo>Evento registrado e vinculado a NF-e</xMotivo>",
+    "<nProt>891250000000017</nProt></infEvento></retEvento></retEnvEvento>"
+);
+
+#[tokio::test]
+async fn manifest_returns_the_signed_event_and_the_raw_response() {
+    let client = nfce_client(MANIFEST_RESPONSE);
+    for (environment, host) in [
+        (SefazEnvironment::Homologation, "hom1.nfe.fazenda.gov.br"),
+        (SefazEnvironment::Production, "www.nfe.fazenda.gov.br"),
+    ] {
+        let response = client
+            .manifest(
+                environment,
+                NFE_ACCESS_KEY,
+                "210210",
+                None,
+                1,
+                "06157250000116",
+            )
+            .await
+            .unwrap();
+        let (url, envelope) = captured_request(&client);
+        assert_eq!(
+            url,
+            format!("https://{host}/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx")
+        );
+        assert!(envelope.contains("<tpEvento>210210</tpEvento>"));
+        assert!(envelope.contains("<cOrgao>91</cOrgao>"));
+        assert!(envelope.contains(&response.signed_event_xml));
+        assert!(response.signed_event_xml.contains("<Signature"));
+        assert!(
+            response
+                .signed_event_xml
+                .contains(&format!("Reference URI=\"#ID210210{NFE_ACCESS_KEY}01\""))
+        );
+        assert_eq!(response.status_code, "135");
+        assert_eq!(response.protocol_number.as_deref(), Some("891250000000017"));
+        assert_eq!(response.raw_response, MANIFEST_RESPONSE);
+    }
+}
+
+#[tokio::test]
+async fn manifest_batch_returns_the_signed_events_and_the_raw_response() {
+    let client = nfce_client(MANIFEST_RESPONSE);
+    let events = [
+        request_builders::EventItem {
+            access_key: NFE_ACCESS_KEY.to_string(),
+            event_type: 210210,
+            seq: 1,
+            tax_id: "06157250000116".to_string(),
+            additional_tags: String::new(),
+        },
+        request_builders::EventItem {
+            access_key: NFE_ACCESS_KEY.to_string(),
+            event_type: 210200,
+            seq: 1,
+            tax_id: "06157250000116".to_string(),
+            additional_tags: String::new(),
+        },
+    ];
+    let response = client
+        .manifest_batch(SefazEnvironment::Homologation, &events, Some("7"))
+        .await
+        .unwrap();
+    let (url, envelope) = captured_request(&client);
+    assert_eq!(
+        url,
+        "https://hom1.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx"
+    );
+    assert!(envelope.contains(&response.signed_event_xml));
+    assert_eq!(
+        response
+            .signed_event_xml
+            .matches("<SignatureValue>")
+            .count(),
+        2
+    );
+    assert_eq!(response.raw_response, MANIFEST_RESPONSE);
+}

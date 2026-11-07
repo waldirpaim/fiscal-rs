@@ -1,0 +1,25 @@
+[package]
+name = "fiscal-pdf"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Pure-Rust FPDF-style PDF generation engine (port of FPDF-Pascal) used to render fiscal auxiliary documents such as the DANFE"
+license = "MIT"
+repository = "https://github.com/JoaoHenriqueBarbosa/fiscal-rs"
+readme = "README.md"
+keywords = ["pdf", "fpdf", "danfe", "fiscal", "brazil"]
+categories = ["encoding", "graphics"]
+
+[features]
+default = []
+# RC4/MD5 document protection ("SetProtection"). Obsolete scheme; opt-in.
+protection = ["dep:md-5"]
+
+[dependencies]
+flate2 = "1"
+md-5 = { version = "0.10", optional = true }
+qrcodegen = "1"
+thiserror = "2"
+
+[dev-dependencies]
+flate2 = "1"

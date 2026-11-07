@@ -15,7 +15,8 @@ base64 = "0.22"
 der = { version = "0.8", features = ["derive", "oid", "alloc"] }
 x509-cert = { version = "0.3", features = ["pem"] }
 pkcs8 = { version = "0.11", features = ["pem", "alloc"] }
-rsa = { version = "0.9" }
+# getrandom: OsRng for RSA blinding in the private-key operation (RUSTSEC-2023-0071).
+rsa = { version = "0.9", features = ["getrandom"] }
 pkcs12 = { version = "0.1", features = ["kdf"] }
 rc2 = "0.9"
 cbc = "0.2"
